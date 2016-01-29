@@ -11,4 +11,3 @@ To use jekyll-scholar, we recommend reading up on the excellent documentation on
 
 ## Sample bibliography
 
-<p>{% bibliography %}</p>
