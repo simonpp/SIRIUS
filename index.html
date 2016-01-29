@@ -1,0 +1,115 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>SIRIUS by electronic-structure</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-dark.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/respond.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!--[if lt IE 8]>
+    <link rel="stylesheet" href="stylesheets/ie.css">
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+      <div id="header">
+        <nav>
+          <li class="fork"><a href="https://github.com/electronic-structure/SIRIUS">View On GitHub</a></li>
+          <li class="downloads"><a href="https://github.com/electronic-structure/SIRIUS/zipball/master">ZIP</a></li>
+          <li class="downloads"><a href="https://github.com/electronic-structure/SIRIUS/tarball/master">TAR</a></li>
+          <li class="title">DOWNLOADS</li>
+        </nav>
+      </div><!-- end header -->
+
+    <div class="wrapper">
+
+      <section>
+        <div id="title">
+          <h1>SIRIUS</h1>
+          <p>Domain specific library for electronic structure calculations</p>
+          <hr>
+          <span class="credits left">Project maintained by <a href="https://github.com/electronic-structure">electronic-structure</a></span>
+          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
+        </div>
+
+        <h3>
+<a id="welcome-to-sirius-project" class="anchor" href="#welcome-to-sirius-project" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Welcome to SIRIUS project</h3>
+
+<p>Code block:
+    #include "kernels_common.h"</p>
+
+<p><strong>global</strong> void create_beta_gk_gpu_kernel
+(
+    int num_gkvec__,
+    int const* beta_desc__,
+    cuDoubleComplex const* beta_gk_t,
+    double const* gkvec,
+    double const* atom_pos,
+    cuDoubleComplex* beta_gk
+)
+{
+    int ia = blockIdx.y;
+    int igk = blockDim.x * blockIdx.x + threadIdx.x;</p>
+
+<pre><code>int nbf              = beta_desc__[array2D_offset(0, ia, 4)];
+int offset_beta_gk   = beta_desc__[array2D_offset(1, ia, 4)];
+int offset_beta_gk_t = beta_desc__[array2D_offset(2, ia, 4)];
+
+if (igk &lt; num_gkvec__)
+{
+    double p = 0;
+    for (int x = 0; x &lt; 3; x++) p += atom_pos[array2D_offset(x, ia, 3)] * gkvec[array2D_offset(x, igk, 3)];
+    p *= twopi;
+
+    double sinp = sin(p);
+    double cosp = cos(p);
+
+    for (int xi = 0; xi &lt; nbf; xi++)
+    {
+        beta_gk[array2D_offset(igk, offset_beta_gk + xi, num_gkvec__)] =
+            cuCmul(beta_gk_t[array2D_offset(igk, offset_beta_gk_t + xi, num_gkvec__)],
+                   make_cuDoubleComplex(cosp, -sinp));
+    }
+}
+</code></pre>
+
+<p>}</p>
+
+<p>extern "C" void create_beta_gk_gpu(int num_atoms,
+                                   int num_gkvec,
+                                   int const* beta_desc,
+                                   cuDoubleComplex const* beta_gk_t,
+                                   double const* gkvec,
+                                   double const* atom_pos,
+                                   cuDoubleComplex* beta_gk)
+{
+    CUDA_timer t("create_beta_gk_gpu");</p>
+
+<pre><code>dim3 grid_t(64);
+dim3 grid_b(num_blocks(num_gkvec, grid_t.x), num_atoms);
+
+create_beta_gk_gpu_kernel &lt;&lt;&lt;grid_b, grid_t&gt;&gt;&gt;
+(
+    num_gkvec,
+    beta_desc,
+    beta_gk_t,
+    gkvec,
+    atom_pos,
+    beta_gk
+);
+</code></pre>
+
+<p>}</p>
+      </section>
+
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>
