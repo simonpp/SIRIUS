@@ -3,6 +3,24 @@ layout: post
 title: Sample code
 ---
 
+{% highlight C %}
+struct z_column_descriptor
+{
+    int x;
+    int y;
+    int offset;
+    std::vector<int> z;
+
+    z_column_descriptor()
+    {
+    }
+
+    z_column_descriptor(int x__, int y__, std::vector<int> z__) : x(x__), y(y__), z(z__)
+    {
+    }
+};
+{% endhighlight %}
+
 A simple CUDA kernel:
 
 {% highlight Cuda %}
