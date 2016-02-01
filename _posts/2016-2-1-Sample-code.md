@@ -23,7 +23,7 @@ struct z_column_descriptor
 
 A simple CUDA kernel:
 
-{% highlight Cuda %}
+{% highlight C++ %}
 template <int direction, bool conjugate>
 __global__ void pack_unpack_z_cols_gpu_kernel
 (
