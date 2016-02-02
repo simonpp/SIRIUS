@@ -247,15 +247,16 @@ nav {
     width:150px;
     float:left;
     //border-right: 1px solid Grey;
-    //padding:0px;
+    //padding:10px;
     a:hover {
       background-color: LightGray;
 
     }
     a {
       display: inline-block;
-      width: 145px;
+      width: 150px;
       border-bottom: 1px solid Grey;
+      padding: 3px 0px 0px 10px;
 
     }
 }
@@ -265,11 +266,23 @@ nav {
 //
 header {
     background-color: LightGray;
-    //color:white;
     text-align:left;
-    padding:5px;
-      border-bottom: 1px solid Grey;
+    padding:10px;
+    border: 1px solid Grey;
     margin: 5px 0px 5px 0px;
+}
+
+footer {
+    background-color: LightGray;
+    text-align: right;
+    padding-right: 10px;
+    border: 1px solid Grey;
+    margin: 5px 0px 5px 0px;
+
+    //color:white;
+    //clear:both;
+    //border-bottom: 10px solid #ffffff;
+    //color: $darkGray;
 }
 
 .post {
@@ -316,15 +329,6 @@ header {
 //  //line-height: 120%;
 //}
 
-footer {
-    background-color: LightGray;
-    color:white;
-    clear:both;
-    text-align: right;
-    padding-right: 10px;
-    border-bottom: 10px solid #ffffff;
-    color: $darkGray;
-}
 //.wrapper-footer {
 //  margin-top: 50px;
 //  border-top: 1px solid #ddd;
