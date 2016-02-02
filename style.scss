@@ -33,16 +33,14 @@
 }
 
 
-//html {
-//  font-size: 100%;
-//}
-
 body {
-  background: $white;
+  background: White;
   font: 16px/1.5 $helvetica;
-  color: $darkGray;
+  //color: $darkGray;
   max-width: 1080px;
-  margin: 0 auto;
+  //margin: 0 0 0 0;
+  margin-left:auto;
+  margin-right:auto;
   float: none;
 }
 
@@ -57,35 +55,31 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-family: $helvetica;
   color: Black;
-  font-weight: bold;
+  font-weight: Bold;
 
-  line-height: 1.0;
-  //margin: 1em 0 15px;
+  //line-height: 1.0;
   //padding: 0;
 }
 
 h1 {
-  font-size: 24px;
-  a {
-    color: inherit;
-  }
+  font-size: 22px;
+  //a {
+  //  color: inherit;
+  //}
+  margin: 0px 0px -25px 0px;
+  //padding: 0;
 }
 
 h2 {
-  font-size: 22px;
-}
-
-h3 {
   font-size: 20px;
 }
 
-h4 {
+h3 {
   font-size: 18px;
-  color: $gray;
 }
 
-p {
-  margin: 15px 0;
+h4 {
+  font-size: 16px;
 }
 
 a {
@@ -203,13 +197,18 @@ img {
   font-weight: 900;
   font-size: 40px;
   //letter-spacing: 1px;
+  margin: -5px 0px -15px 0px;
+  //line-height: 30px;
 }
 
 .site-description {
   margin: 0 0 0 0;
   color: Black;
-  font-size: 22px;
+  font-size: 24px;
   font-family: $helvetica;
+  //font-family: Orbitron;
+  margin: 0px 0px -5px 0px;
+  //line-height: 20px;
   //font-weight: 500;
 }
 
@@ -239,10 +238,9 @@ img {
 
 nav {
     //line-height:30px;
-    background-color:#FFFFFF;
+    background-color:White;
     font-family: Orbitron;
     //min-height: 800px;
-    height: auto;
     height: auto;
     width:150px;
     float:left;
