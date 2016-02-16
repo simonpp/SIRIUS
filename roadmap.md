@@ -4,4 +4,15 @@ title: Road map
 permalink: /roadmap/
 ---
 
-We plan the following:
+## PW pseudopotential part
+
+* Gamma-point calculation
+* Real-space projectors
+* PAW method
+* Spin-orbit coupling
+* Forces and relaxation
+
+## FP LAPW part
+
+* Iteratice solver
+* Forces and relaxation
