@@ -13,7 +13,7 @@ permalink: /roadmap/
 * EXX kernel
 * RMM-DIIS solver (serial, parallel, CPU & GPU versions)
 * Restore norm-conserving branch
-* H and O Matrix setup kernel
+* H and O matrix setup kernel
 * Turn FFT driver into a separate library, merge with QE effort
 
 ## FP LAPW part
