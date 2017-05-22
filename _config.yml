@@ -73,4 +73,4 @@ gems:
 exclude:
     - LICENSE
 
-excerpt_separator: ""
+excerpt_separator: <!--more-->

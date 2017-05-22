@@ -4,6 +4,7 @@ title: MathJax is there
 ---
 
 MathJax seems to work:
+<!--more-->
 \\[
   \rho({\bf r}) = \sum_{i} \psi_{i}^{*}({\bf r}) \psi_{i}({\bf r})
 \\]

@@ -2,7 +2,8 @@
 layout: post
 title: Sample code
 ---
-
+Code highlighting
+<!--more-->
 {% highlight C %}
 struct z_column_descriptor
 {
