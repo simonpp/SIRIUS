@@ -34,7 +34,7 @@
 
 
 body {
-  background: White;
+  background: $lightGray;
   font: 16px/1.5 $helvetica;
   //color: $darkGray;
   max-width: 1080px;
@@ -54,7 +54,8 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: $helvetica;
-  color: Black;
+  //color: Black;
+  color: $darkGray;
   font-weight: Bold;
 
   //line-height: 1.0;
@@ -83,11 +84,11 @@ h4 {
 }
 
 a {
-  color: $blue;
+  color: $primaryColor;
   text-decoration: none;
   cursor: pointer;
   &:hover, &:active {
-    color: $blue;
+    color: $primaryColor;
   }
 }
 
@@ -203,7 +204,7 @@ img {
 
 .site-description {
   margin: 0 0 0 0;
-  color: Black;
+  color: $darkGray;
   font-size: 24px;
   font-family: $helvetica;
   //font-family: Orbitron;
@@ -238,8 +239,9 @@ img {
 
 nav {
     //line-height:30px;
-    background-color:White;
-    font-family: Orbitron;
+    background-color: $lightGray;
+    font-family: $helvetica;
+    //font-family: Orbitron;
     //min-height: 800px;
     height: auto;
     width:150px;
@@ -248,15 +250,17 @@ nav {
     //padding:10px;
     a:hover {
       background-color: LightGray;
-
     }
     a {
       display: inline-block;
       width: 150px;
       border-bottom: 1px solid Grey;
       padding: 3px 0px 0px 10px;
-
-    }
+      color: $darkGray;
+      &:hover, &:active {
+        color: $darkGray;
+     }
+  }
 }
 
 //
