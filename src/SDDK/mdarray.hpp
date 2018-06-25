@@ -520,9 +520,23 @@ class mdarray_base
         }
 #ifndef __GPU
         if ((memory__ & memory_t::host_pinned) == memory_t::host_pinned) {
+            /* CPU only code, no point in using page-locked memory */
             memory__ = memory_t::host;
         }
+#else
+        /* GPU enabled code, check if there is a CUDA capable device */
+        if (memory__ == memory_t::host_pinned ) {
+            int num_cuda_devices;
+            /* this call is expensive */
+            cudaError_t cuda_err = cudaGetDeviceCount(&num_cuda_devices);
+            if (cuda_err != cudaSuccess) {
+                /* there is no cuda card, don't use page-locked memory */
+                memory__ = memory_t::host;
+            }
+        }
 #endif
+
+
         /* host allocation */
         if ((memory__ & memory_t::host) == memory_t::host) {
             /* page-locked memory */
