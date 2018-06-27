@@ -330,7 +330,8 @@ class Local_operator
         }
 
 #ifdef __GPU
-        mdarray<double*, 1> vptr(4, memory_t::host | memory_t::device);
+        memory_t vptr_mem = acc::num_devices() > 0 ? memory_t::host | memory_t::device : memory_t::host;
+        mdarray<double*, 1> vptr(4, vptr_mem);
         vptr.zero();
         if (fft_coarse_.pu() == GPU) {
             for (int j = 0; j < ctx_.num_mag_dims() + 1; j++) {
@@ -417,7 +418,7 @@ class Local_operator
         };
 
         /* store the resulting hphi
-               spin block (ispn_block) is used as a bit mask: 
+               spin block (ispn_block) is used as a bit mask:
                 - first bit: spin component which is updated
                 - second bit: add or not kinetic energy term */
         auto add_to_hphi = [&](int i, int ispn_block, bool gamma = false) {
@@ -494,7 +495,7 @@ class Local_operator
 
         int first{0};
         /* If G-vectors are reduced, wave-functions are real and we can transform two of them at once.
-             * Non-collinear case is not treated here because nc wave-functions are complex and G+k vectors 
+             * Non-collinear case is not treated here because nc wave-functions are complex and G+k vectors
              * can't be reduced */
         if (gkvec_p_->gvec().reduced()) {
             int npairs = num_wf_loc / 2;
@@ -707,7 +708,7 @@ class Local_operator
                     if (hphi__ != nullptr) {
                         #pragma omp parallel for schedule(static)
                         for (int ir = 0; ir < fft_coarse_.local_size(); ir++) {
-                            /* multiply be effective potential, which itself was multiplied by the step function 
+                            /* multiply be effective potential, which itself was multiplied by the step function
                                    in the prepare() method */
                             fft_coarse_.buffer(ir) *= veff_vec_[0].f_rg(ir);
                         }
