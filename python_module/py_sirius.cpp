@@ -135,6 +135,7 @@ PYBIND11_MODULE(py_sirius, m)
         .def("num_bands", py::overload_cast<int>(&Simulation_context::num_bands))
         .def("set_verbosity", &Simulation_context::set_verbosity)
         .def("create_storage_file", &Simulation_context::create_storage_file)
+        .def("processing_unit", &Simulation_context::processing_unit)
         .def("gvec", &Simulation_context::gvec)
         .def("fft", &Simulation_context::fft)
         .def("unit_cell", py::overload_cast<>(&Simulation_context::unit_cell, py::const_), py::return_value_policy::reference);
@@ -289,7 +290,23 @@ PYBIND11_MODULE(py_sirius, m)
         });
 
     py::class_<Hamiltonian>(m, "Hamiltonian")
-        .def(py::init<Simulation_context&, Potential&>());
+        .def(py::init<Simulation_context&, Potential&>())
+        .def("apply", [](Hamiltonian& hamiltonian, K_point& kp, int ispn, Wave_functions& wf) -> Wave_functions {
+            auto&          gkvec_partition = wf.gkvec_partition();
+            int            num_wf           = wf.num_wf();
+            int            num_sc           = wf.num_sc();
+            Wave_functions wf_out(gkvec_partition, num_wf, num_sc);
+            /* apply H to all wave functions */
+            int N = 0;
+            int n = num_wf;
+            auto& ctx = hamiltonian.ctx();
+            hamiltonian.local_op().dismiss();
+            hamiltonian.local_op().prepare(kp.gkvec_partition());
+            hamiltonian.prepare<double_complex>();
+            hamiltonian.apply_h_s<complex_double>(&kp, ispn, N, n, wf, &wf_out, nullptr);
+            hamiltonian.dismiss();
+            return wf_out;
+        });
 
     py::class_<Stress>(m, "Stress")
         .def(py::init<Simulation_context&, Density&, Potential&, Hamiltonian&, K_point_set&>())
@@ -323,18 +340,19 @@ PYBIND11_MODULE(py_sirius, m)
     //             {sizeof(double), sizeof(double) * nrows});
     //     });
 
-    // py::class_<matrix_storage_slab<complex_double>>(m, "MatrixStorageSlabC", py::buffer_protocol())
-    //     .def_buffer([](matrix_storage_slab<complex_double>& matrix_storage) -> py::array {
-    //         // Fortran storage order
-    //         int nrows = matrix_storage.prime().size(0);
-    //         int ncols = matrix_storage.prime().size(1);
-    //         return py::array(py::buffer_info((void*)matrix_storage.prime().data<CPU>(),
-    //                                          sizeof(complex_double),
-    //                                          py::format_descriptor<complex_double>::format(),
-    //                                          2,
-    //                                          {nrows, ncols},
-    //                                          {sizeof(complex_double), sizeof(complex_double) * nrows}));
-    //     });
+    py::class_<matrix_storage_slab<complex_double>>(m, "MatrixStorageSlabC")
+        .def("is_remapped", &matrix_storage_slab<complex_double>::is_remapped);
+        // .def_buffer([](matrix_storage_slab<complex_double>& matrix_storage) -> py::array {
+        //     // Fortran storage order
+        //     int nrows = matrix_storage.prime().size(0);
+        //     int ncols = matrix_storage.prime().size(1);
+        //     return py::array(py::buffer_info((void*)matrix_storage.prime().data<CPU>(),
+        //                                      sizeof(complex_double),
+        //                                      py::format_descriptor<complex_double>::format(),
+        //                                      2,
+        //                                      {nrows, ncols},
+        //                                      {sizeof(complex_double), sizeof(complex_double) * nrows}));
+        // });
 
     py::class_<Wave_functions>(m, "Wave_functions")
         .def("num_sc", &Wave_functions::num_sc)
@@ -348,5 +366,7 @@ PYBIND11_MODULE(py_sirius, m)
             /* return underlying data as numpy.ndarray view, e.g. non-copying */
             /* TODO this might be a distributed array, should/can we use dask? */
             return py::array_t<complex_double>({nrows, ncols}, {1, nrows}, matrix_storage.prime().data<CPU>(), obj);
-        });
+        })
+        .def("pw_coeffs_obj", py::overload_cast<int>(&Wave_functions::pw_coeffs, py::const_));
+
 }
