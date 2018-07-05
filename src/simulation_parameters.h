@@ -255,8 +255,8 @@ class Simulation_parameters
         if (acc::num_devices() == 0) {
             processing_unit_ = device_t::CPU;
         } else {
-        processing_unit_ = pu__;
-    }
+            processing_unit_ = pu__;
+        }
         #else
         processing_unit_ = device_t::CPU;
         #endif
