@@ -338,8 +338,8 @@ PYBIND11_MODULE(py_sirius, m)
             #endif
 
             /* apply H to all wave functions */
-            int N = 0;
-            int n = num_wf;
+            int   N   = 0;
+            int   n   = num_wf;
             auto& ctx = hamiltonian.ctx();
             // hamiltonian.local_op().dismiss();
             hamiltonian.local_op().prepare(hamiltonian.potential());
