@@ -200,6 +200,8 @@ PYBIND11_MODULE(py_sirius, m)
         })
         .def("index_by_gvec", &Gvec::index_by_gvec);
 
+    py::class_<Gvec_partition>(m, "Gvec_partition");
+
     py::class_<vector3d<int>>(m, "vector3d_int")
         .def(py::init<std::vector<int>>())
         .def("__call__", [](const vector3d<int>& obj, int x) {
@@ -247,6 +249,8 @@ PYBIND11_MODULE(py_sirius, m)
     py::class_<Potential>(m, "Potential")
         .def(py::init<Simulation_context&>())
         .def("generate", &Potential::generate)
+        .def("symmetrize", &Potential::symmetrize)
+        .def("fft_transform", &Potential::fft_transform)
         .def("allocate", &Potential::allocate)
         .def("save", &Potential::save)
         .def("load", &Potential::load);
@@ -255,6 +259,10 @@ PYBIND11_MODULE(py_sirius, m)
         .def(py::init<Simulation_context&>())
         .def("initial_density", &Density::initial_density)
         .def("allocate", &Density::allocate)
+        .def("fft_transform", &Density::fft_transform)
+        .def("mix", &Density::mix)
+        .def("symmetrize", &Density::symmetrize)
+        .def("generate", &Density::generate)
         .def("save", &Density::save)
         .def("load", &Density::load);
 
@@ -276,16 +284,16 @@ PYBIND11_MODULE(py_sirius, m)
             return pj_convert(js);
         })
         .def("k_point_set", &DFT_ground_state::k_point_set, py::return_value_policy::reference_internal)
-        .def("hamiltonian", &DFT_ground_state::hamiltonian, py::return_value_policy::reference)
-        .def("potential", &DFT_ground_state::potential, py::return_value_policy::reference);
+        .def("hamiltonian", &DFT_ground_state::hamiltonian, py::return_value_policy::reference_internal)
+        .def("potential", &DFT_ground_state::potential, py::return_value_policy::reference_internal);
 
     py::class_<K_point>(m, "K_point")
         .def("band_energy", py::overload_cast<int, int>(&K_point::band_energy))
         .def("vk", &K_point::vk, py::return_value_policy::reference)
         .def("generate_fv_states", &K_point::generate_fv_states)
+        .def("gkvec_partition", &K_point::gkvec_partition, py::return_value_policy::reference_internal)
         .def("fv_states", &K_point::fv_states, py::return_value_policy::reference_internal)
         .def("spinor_wave_functions", &K_point::spinor_wave_functions, py::return_value_policy::reference_internal);
-    // .def("hubbard_wave_functions", &K_point::hubbard_wave_functions, py::return_value_policy::reference_internal)
 
     py::class_<K_point_set>(m, "K_point_set")
         .def(py::init<Simulation_context&>())
@@ -313,6 +321,16 @@ PYBIND11_MODULE(py_sirius, m)
 
     py::class_<Hamiltonian>(m, "Hamiltonian")
         .def(py::init<Simulation_context&, Potential&>())
+        .def("potential", &Hamiltonian::potential, py::return_value_policy::reference)
+        .def("on_gpu", [](Hamiltonian& hamiltonian) -> bool {
+            const auto& ctx = hamiltonian.ctx();
+            auto        pu  = ctx.processing_unit();
+            if (pu == device_t::GPU) {
+                return true;
+            } else {
+                return false;
+            }
+        })
         .def("apply", [](Hamiltonian& hamiltonian, K_point& kp, int ispn, Wave_functions& wf) -> Wave_functions {
             auto&          gkvec_partition = wf.gkvec_partition();
             int            num_wf           = wf.num_wf();
@@ -407,6 +425,7 @@ PYBIND11_MODULE(py_sirius, m)
         .value("GPU", sddk::device_t::GPU);
 
     py::class_<Wave_functions>(m, "Wave_functions")
+        .def(py::init<Gvec_partition const&, int, int>())
         .def("num_sc", &Wave_functions::num_sc)
         .def("num_wf", &Wave_functions::num_wf)
         .def("has_mt", &Wave_functions::has_mt)
