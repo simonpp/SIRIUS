@@ -310,8 +310,7 @@ PYBIND11_MODULE(py_sirius, m)
                 throw std::runtime_error("invalid memory access in K_point_set");
             }
             return *ks[i];
-        },
-             py::return_value_policy::reference_internal)
+        }, py::return_value_policy::reference_internal)
         .def("add_kpoint", [](K_point_set& ks, std::vector<double> v, double weight) {
             ks.add_kpoint(v.data(), weight);
         })
@@ -333,15 +332,15 @@ PYBIND11_MODULE(py_sirius, m)
         })
         .def("apply", [](Hamiltonian& hamiltonian, K_point& kp, int ispn, Wave_functions& wf) -> Wave_functions {
             auto&          gkvec_partition = wf.gkvec_partition();
-            int            num_wf           = wf.num_wf();
-            int            num_sc           = wf.num_sc();
+            int            num_wf          = wf.num_wf();
+            int            num_sc          = wf.num_sc();
             Wave_functions wf_out(gkvec_partition, num_wf, num_sc);
             #ifdef __GPU
-            if(hamiltonian.ctx().processing_unit() == GPU) {
+            if (hamiltonian.ctx().processing_unit() == GPU) {
                 for (int i = 0; i < num_sc; ++i) {
                     wf_out.pw_coeffs(i).allocate_on_device();
                 }
-                if(!wf.pw_coeffs(0).prime().on_device()) {
+                if (!wf.pw_coeffs(0).prime().on_device()) {
                     for (int i = 0; i < num_sc; ++i) {
                         wf.pw_coeffs(i).allocate_on_device();
                         wf.pw_coeffs(i).copy_to_device(0, num_wf);
@@ -388,34 +387,9 @@ PYBIND11_MODULE(py_sirius, m)
             return pj_convert(js);
         });
 
-    // py::class_<matrix_storage_slab<double>>(m, "MatrixStorageSlabD", py::buffer_protocol())
-    //     .def_buffer([](matrix_storage_slab<double>& matrix_storage) -> py::buffer_info {
-    //         // Fortran storage order
-    //         int nrows = matrix_storage.prime().size(0);
-    //         int ncols = matrix_storage.prime().size(1);
-    //         return py::buffer_info(
-    //             (void*)matrix_storage.prime().data<CPU>(),
-    //             sizeof(double),
-    //             py::format_descriptor<double>::format(),
-    //             2,
-    //             {nrows, ncols},
-    //             {sizeof(double), sizeof(double) * nrows});
-    //     });
-
     py::class_<matrix_storage_slab<complex_double>>(m, "MatrixStorageSlabC")
         .def("is_remapped", &matrix_storage_slab<complex_double>::is_remapped)
         .def("prime", py::overload_cast<>(&matrix_storage_slab<complex_double>::prime), py::return_value_policy::reference_internal);
-        // .def_buffer([](matrix_storage_slab<complex_double>& matrix_storage) -> py::array {
-        //     // Fortran storage order
-        //     int nrows = matrix_storage.prime().size(0);
-        //     int ncols = matrix_storage.prime().size(1);
-        //     return py::array(py::buffer_info((void*)matrix_storage.prime().data<CPU>(),
-        //                                      sizeof(complex_double),
-        //                                      py::format_descriptor<complex_double>::format(),
-        //                                      2,
-        //                                      {nrows, ncols},
-        //                                      {sizeof(complex_double), sizeof(complex_double) * nrows}));
-        // });
 
     py::class_<mdarray<complex_double,2>>(m, "mdarray2c")
         .def("on_device", &mdarray<complex_double,2>::on_device);
@@ -457,15 +431,15 @@ PYBIND11_MODULE(py_sirius, m)
             }
             if (!is_on_device) {
                 for (int ispn = 0; ispn < wf.num_sc(); ispn++) {
-                    std::cerr << "allocating storage for spin-component " << ispn << "\n";
+                    std::cerr << "pysirius: allocating storage for spin-component " << ispn << "\n";
                     wf.pw_coeffs(ispn).prime().allocate(memory_t::device);
                 }
             } else {
-                std::cerr << "wave function is already on device, possibly loosing data...\n";
+                std::cerr << "pysirius: wave function is already on device, possibly loosing data...\n";
             }
 
             for (int ispn = 0; ispn < wf.num_sc(); ispn++) {
-                std::cerr << "wave function copying sc=" << ispn << " to device...\n";
+                std::cerr << "pysirius: wave function copying sc=" << ispn << " to device...\n";
                 wf.copy_to_device(ispn, 0, wf.num_wf());
             }
         })
@@ -476,10 +450,10 @@ PYBIND11_MODULE(py_sirius, m)
                 is_on_device = is_on_device && wf.pw_coeffs(i).prime().on_device();
             }
             if (!is_on_device) {
-                std::cerr << "not on device" << "\n";
+                std::cerr << "pysirius: not on device" << "\n";
             } else {
                 for (int ispn = 0; ispn < wf.num_sc(); ispn++) {
-                    std::cerr << "wave function copying sc=" << ispn << " to device...\n";
+                    std::cerr << "pysirius: wave function copying sc=" << ispn << " to device...\n";
                     wf.copy_to_host(ispn, 0, wf.num_wf());
                 }
             }
