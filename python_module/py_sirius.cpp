@@ -366,6 +366,9 @@ PYBIND11_MODULE(py_sirius, m)
             hamiltonian.apply_h_s<complex_double>(&kp, ispn, N, n, wf, &wf_out, nullptr);
             hamiltonian.dismiss();
             hamiltonian.ctx().fft_coarse().dismiss();
+            if (hamiltonian.ctx().processing_unit() == GPU) {
+                wf_out.copy_to_host(0, 0, n);
+            }
             return wf_out;
         });
 
