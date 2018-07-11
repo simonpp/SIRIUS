@@ -299,7 +299,7 @@ PYBIND11_MODULE(py_sirius, m)
         .def("sync_band_energies", &K_point_set::sync_band_energies)
         .def("__getitem__", [](K_point_set& ks, int i) -> K_point& {
             if (ks[i] == nullptr) {
-                throw std::runtime_error("oops");
+                throw std::runtime_error("invalid memory access in K_point_set");
             }
             return *ks[i];
         },
