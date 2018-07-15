@@ -288,7 +288,7 @@ class Density : public Field4D
     inline void add_k_point_contribution_rg(K_point* kp__);
 
     /// Generate valence density in the muffin-tins
-    void generate_valence_mt(K_point_set& ks);
+    void generate_valence_mt();
 
     /// Generate charge density of core states
     void generate_core_charge_density()
@@ -468,7 +468,7 @@ class Density : public Field4D
     /// Generate full charge density (valence + core) and magnetization from the wave functions.
     /** This function calls generate_valence() and then in case of full-potential LAPW method adds a core density
      *  to get the full charge density of the system. */
-    inline void generate(K_point_set& ks__)
+    inline void generate(K_point_set const& ks__)
     {
         PROFILE("sirius::Density::generate");
 
@@ -497,7 +497,7 @@ class Density : public Field4D
     /** The interstitial density is generated on the coarse FFT grid and then transformed to the PW domain.
      *  After symmetrization and mixing and before the generation of the XC potential density is transformted to the
      *  real-space domain and checked for the number of electrons. */
-    inline void generate_valence(K_point_set& ks__);
+    inline void generate_valence(K_point_set const& ks__);
 
     /// Add augmentation charge Q(r).
     /** Restore valence density by adding the Q-operator constribution.
@@ -522,7 +522,7 @@ class Density : public Field4D
      *      d_{\xi \xi'}^{A}({\bf G}) = \sum_{\alpha(A)} d_{\xi \xi'}^{\alpha(A)} e^{-i{\bf G}\tau_{\alpha(A)}} 
      *  \f]
      */
-    void augment(K_point_set& ks__)
+    void augment()
     {
         PROFILE("sirius::Density::augment");
 
