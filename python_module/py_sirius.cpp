@@ -11,7 +11,11 @@
 #include <utility>
 #include <memory>
 #include <stdexcept>
+#include <omp.h>
+
 #include "utils/json.hpp"
+#include "ewald_energy.hpp"
+
 
 using namespace pybind11::literals; // to bring in the `_a` literal
 namespace py = pybind11;
@@ -158,8 +162,9 @@ PYBIND11_MODULE(py_sirius, m)
         .def("create_storage_file", &Simulation_context::create_storage_file)
         .def("processing_unit", &Simulation_context::processing_unit)
         .def("set_processing_unit", py::overload_cast<device_t>(&Simulation_context::set_processing_unit))
-        .def("gvec", &Simulation_context::gvec)
-        .def("fft", &Simulation_context::fft)
+        .def("gvec", &Simulation_context::gvec, py::return_value_policy::reference_internal)
+        .def("full_potential", &Simulation_context::full_potential)
+        .def("fft", &Simulation_context::fft, py::return_value_policy::reference_internal)
         .def("unit_cell", py::overload_cast<>(&Simulation_context::unit_cell, py::const_), py::return_value_policy::reference);
 
     py::class_<Unit_cell>(m, "Unit_cell")
@@ -209,8 +214,7 @@ PYBIND11_MODULE(py_sirius, m)
         })
         .def("__repr__", [](const vector3d<int>& vec) {
             return show_vec(vec);
-        })
-        .def(py::init<vector3d<int>>());
+        });
 
     py::class_<vector3d<double>>(m, "vector3d_double")
         .def(py::init<std::vector<double>>())
@@ -253,26 +257,34 @@ PYBIND11_MODULE(py_sirius, m)
         .def("fft_transform", &Potential::fft_transform)
         .def("allocate", &Potential::allocate)
         .def("save", &Potential::save)
-        .def("load", &Potential::load);
+        .def("load", &Potential::load)
+        .def("energy_vha", &Potential::energy_vha)
+        .def("energy_vxc", &Potential::energy_vxc)
+        .def("energy_exc", &Potential::energy_exc)
+        .def("PAW_total_energy", &Potential::PAW_total_energy)
+        .def("PAW_one_elec_energy", &Potential::PAW_one_elec_energy)
+        ;
 
     py::class_<Density>(m, "Density")
-        .def(py::init<Simulation_context&>())
+        .def(py::init<Simulation_context&>(), py::keep_alive<1, 2>())
         .def("initial_density", &Density::initial_density)
         .def("allocate", &Density::allocate)
         .def("fft_transform", &Density::fft_transform)
         .def("mix", &Density::mix)
         .def("symmetrize", &Density::symmetrize)
+        .def("symmetrize_density_matrix", &Density::symmetrize_density_matrix)
         .def("generate", &Density::generate)
         .def("save", &Density::save)
+        .def("check_num_electrons", &Density::check_num_electrons)
         .def("load", &Density::load);
 
     py::class_<Band>(m, "Band")
-        .def(py::init<Simulation_context&>())
+        .def(py::init<Simulation_context&>(), py::keep_alive<1, 2>())
         .def("initialize_subspace", py::overload_cast<K_point_set&, Hamiltonian&>(&Band::initialize_subspace, py::const_))
         .def("solve", &Band::solve);
 
     py::class_<DFT_ground_state>(m, "DFT_ground_state")
-        .def(py::init<K_point_set&>())
+        .def(py::init<K_point_set&>(), py::keep_alive<1, 2>())
         .def("print_info", &DFT_ground_state::print_info)
         .def("initial_state", &DFT_ground_state::initial_state)
         .def("print_magnetic_moment", &DFT_ground_state::print_magnetic_moment)
@@ -296,7 +308,7 @@ PYBIND11_MODULE(py_sirius, m)
         .def("spinor_wave_functions", &K_point::spinor_wave_functions, py::return_value_policy::reference_internal);
 
     py::class_<K_point_set>(m, "K_point_set")
-        .def(py::init<Simulation_context&>())
+        .def(py::init<Simulation_context&>(), py::keep_alive<1, 2>())
         .def(py::init<Simulation_context&, std::vector<vector3d<double>>>())
         .def(py::init<Simulation_context&, vector3d<int>, vector3d<int>, bool>())
         .def(py::init<Simulation_context&, std::vector<int>, std::vector<int>, bool>())
@@ -305,12 +317,14 @@ PYBIND11_MODULE(py_sirius, m)
         .def("energy_fermi", &K_point_set::energy_fermi)
         .def("get_band_energies", &K_point_set::get_band_energies, py::return_value_policy::reference)
         .def("sync_band_energies", &K_point_set::sync_band_energies)
+        .def("valence_eval_sum", &K_point_set::valence_eval_sum)
         .def("__getitem__", [](K_point_set& ks, int i) -> K_point& {
             if (ks[i] == nullptr) {
                 throw std::runtime_error("invalid memory access in K_point_set");
             }
             return *ks[i];
         }, py::return_value_policy::reference_internal)
+        .def("__len__", &K_point_set::num_kpoints)
         .def("add_kpoint", [](K_point_set& ks, std::vector<double> v, double weight) {
             ks.add_kpoint(v.data(), weight);
         })
@@ -319,7 +333,7 @@ PYBIND11_MODULE(py_sirius, m)
         });
 
     py::class_<Hamiltonian>(m, "Hamiltonian")
-        .def(py::init<Simulation_context&, Potential&>())
+        .def(py::init<Simulation_context&, Potential&>(), py::keep_alive<1, 2>())
         .def("potential", &Hamiltonian::potential, py::return_value_policy::reference)
         .def("on_gpu", [](Hamiltonian& hamiltonian) -> bool {
             const auto& ctx = hamiltonian.ctx();
@@ -357,7 +371,6 @@ PYBIND11_MODULE(py_sirius, m)
             /* apply H to all wave functions */
             int   N   = 0;
             int   n   = num_wf;
-            auto& ctx = hamiltonian.ctx();
             // hamiltonian.local_op().dismiss();
             hamiltonian.local_op().prepare(hamiltonian.potential());
             hamiltonian.local_op().prepare(kp.gkvec_partition());
@@ -479,4 +492,9 @@ PYBIND11_MODULE(py_sirius, m)
                                            {1 * sizeof(complex_double), m * sizeof(complex_double)},
                                            S.data<CPU>());
     });
+
+    /* TODO: group this kind of functions somewhere */
+    m.def("ewald_energy", &ewald_energy);
+    m.def("omp_set_num_threads", &omp_set_num_threads);
+    m.def("omp_get_num_threads", &omp_get_num_threads);
 }
