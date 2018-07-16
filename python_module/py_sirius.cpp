@@ -379,9 +379,11 @@ PYBIND11_MODULE(py_sirius, m)
             hamiltonian.apply_h_s<complex_double>(&kp, ispn, N, n, wf, &wf_out, nullptr);
             hamiltonian.dismiss();
             hamiltonian.ctx().fft_coarse().dismiss();
+            #ifdef __GPU
             if (hamiltonian.ctx().processing_unit() == GPU) {
                 wf_out.copy_to_host(0, 0, n);
             }
+            #endif // __GPU
             return wf_out;
         });
 
@@ -422,6 +424,7 @@ PYBIND11_MODULE(py_sirius, m)
         .def("pw_coeffs", [](py::object& obj, int i) -> py::array_t<complex_double> {
             Wave_functions& wf = obj.cast<Wave_functions&>();
             // coefficients are _always_ (i.e. usually ;) ) on GPU; copy to host
+            #ifdef __GPU
             bool is_on_device = wf.pw_coeffs(0).prime().on_device();
             if (is_on_device) {
                 /* on device, assume this is primary storage ... */
@@ -429,6 +432,7 @@ PYBIND11_MODULE(py_sirius, m)
                     wf.copy_to_host(ispn, 0, wf.num_wf());
                 }
             }
+            #endif // __GPU
             auto& matrix_storage = wf.pw_coeffs(i);
             int   nrows          = matrix_storage.prime().size(0);
             int   ncols          = matrix_storage.prime().size(1);
@@ -439,6 +443,7 @@ PYBIND11_MODULE(py_sirius, m)
                                                matrix_storage.prime().data<CPU>(),
                                                obj);
         })
+        #ifdef __GPU
         .def("copy_to_gpu", [](Wave_functions& wf) {
             /* is_on_device -> true if all internal storage is allocated on device */
             bool is_on_device = true;
@@ -474,6 +479,7 @@ PYBIND11_MODULE(py_sirius, m)
                 }
             }
         })
+        #endif // __GPU
         .def("on_device", [](Wave_functions& wf) {
             bool is_on_device = true;
             for (int i = 0; i < wf.num_sc(); ++i) {
