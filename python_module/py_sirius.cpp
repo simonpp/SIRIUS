@@ -315,7 +315,7 @@ PYBIND11_MODULE(py_sirius, m)
         .def("initialize", py::overload_cast<>(&K_point_set::initialize))
         .def("num_kpoints", &K_point_set::num_kpoints)
         .def("energy_fermi", &K_point_set::energy_fermi)
-        .def("get_band_energies", &K_point_set::get_band_energies, py::return_value_policy::reference)
+        .def("get_band_energies", &K_point_set::get_band_energies)
         .def("sync_band_energies", &K_point_set::sync_band_energies)
         .def("valence_eval_sum", &K_point_set::valence_eval_sum)
         .def("__getitem__", [](K_point_set& ks, int i) -> K_point& {
@@ -334,7 +334,7 @@ PYBIND11_MODULE(py_sirius, m)
 
     py::class_<Hamiltonian>(m, "Hamiltonian")
         .def(py::init<Simulation_context&, Potential&>(), py::keep_alive<1, 2>())
-        .def("potential", &Hamiltonian::potential, py::return_value_policy::reference)
+        .def("potential", &Hamiltonian::potential, py::return_value_policy::reference_internal)
         .def("on_gpu", [](Hamiltonian& hamiltonian) -> bool {
             const auto& ctx = hamiltonian.ctx();
             auto        pu  = ctx.processing_unit();
