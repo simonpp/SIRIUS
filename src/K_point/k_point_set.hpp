@@ -189,7 +189,7 @@ class K_point_set
     }
 
     /// Initialize the k-point set
-    void initialize(std::vector<int> counts)
+    void initialize(std::vector<int> const& counts = {})
     {
         PROFILE("sirius::K_point_set::initialize");
         /* distribute k-points along the 1-st dimension of the MPI grid */
