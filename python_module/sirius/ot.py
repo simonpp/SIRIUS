@@ -56,7 +56,7 @@ def pp_total_energy(potential, density, k_point_set, ctx):
 
 
 class Energy:
-    def __init__(self, kpointset, potential, density, hamiltonian, ctx):
+    def __init__(self, kpointset, potential, density, ctx):
         """
         Keyword Arguments:
         kpointset --
@@ -65,7 +65,6 @@ class Energy:
         hamiltonian -- object of type Hamiltonian (c++ wrapper)
         ctx         --
         """
-        self.hamiltonian = hamiltonian
         self.kpointset = kpointset
         self.potential = potential
         self.density = density
@@ -77,19 +76,11 @@ class Energy:
         cn  --
         ki -- the index of the k-point
         """
-        k = self.kpointset[ki]
-        k.spinor_wave_functions().pw_coeffs(0)[:] = cn
-        H = ApplyHamiltonian(self.hamiltonian, k)
-
-        # we are using only a single spin at the moment
         ispn = 0
-        # determine band energies ...
-        ek = np.diag(cn.H * (H * cn))
-        # set band energies in current kpoint
-        for j, e in enumerate(ek):
-            k.set_band_energy(j, ispn, e)
-        self.kpointset.find_band_occupancies()
+        k = self.kpointset[ki]
+        k.spinor_wave_functions().pw_coeffs(ispn)[:] = cn
 
+        # determine band energies ...
         self.density.generate(self.kpointset)
         self.density.fft_transform(1)
 
