@@ -218,11 +218,6 @@ class K_point_set
         }
     }
 
-    void initialize()
-    {
-        initialize(std::vector<int>());
-    }
-
     void update()
     {
         /* update k-points */
