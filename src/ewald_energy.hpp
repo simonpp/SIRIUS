@@ -66,7 +66,7 @@ double ewald_energy(const Simulation_context& ctx, const Gvec& gvec, const Unit_
                 int ja = unit_cell.nearest_neighbour(i, ia).atom_id;
                 double d = unit_cell.nearest_neighbour(i, ia).distance;
                 ewald_r_pt += 0.5 * unit_cell.atom(ia).zn() * unit_cell.atom(ja).zn() *
-                              gsl_sf_erfc(std::sqrt(alpha) * d) / d;
+                              std::erfc(std::sqrt(alpha) * d) / d;
             }
         }
 
