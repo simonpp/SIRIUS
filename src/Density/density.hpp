@@ -391,7 +391,7 @@ class Density : public Field4D
     }
 
     /// Find the total leakage of the core states out of the muffin-tins
-    double core_leakage()
+    double core_leakage() const
     {
         double sum = 0.0;
         for (int ic = 0; ic < unit_cell_.num_atom_symmetry_classes(); ic++) {
@@ -401,7 +401,7 @@ class Density : public Field4D
     }
 
     /// Return core leakage for a specific atom symmetry class
-    double core_leakage(int ic)
+    double core_leakage(int ic) const
     {
         return unit_cell_.atom_symmetry_class(ic).core_leakage();
     }
@@ -436,7 +436,7 @@ class Density : public Field4D
     }
 
     /// Check total density for the correct number of electrons.
-    inline void check_num_electrons()
+    inline bool check_num_electrons() const
     {
         double nel{0};
         if (ctx_.full_potential()) {
@@ -462,6 +462,9 @@ class Density : public Field4D
                 }
             }
             WARNING(s);
+            return false;
+        } else {
+            return true;
         }
     }
 
@@ -900,7 +903,7 @@ class Density : public Field4D
         return rms;
     }
 
-    inline double dr2()
+    inline double dr2() const
     {
         return lf_mixer_->rss();
     }
