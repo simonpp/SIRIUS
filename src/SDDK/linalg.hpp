@@ -535,14 +535,14 @@ inline void linalg<CPU>::syinv<ftn_double>(ftn_int n, matrix<ftn_double>& A)
     if (info)
     {
         printf("sytrf returned %i\n", info);
-        exit(-1);
+        raise(SIGABRT);
     }
 
     info = sytri(n, A.at<CPU>(), A.ld(), &ipiv[0]);
     if (info)
     {
         printf("sytri returned %i\n", info);
-        exit(-1);
+        raise(SIGABRT);
     }
 }
 
