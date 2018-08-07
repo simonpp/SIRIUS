@@ -224,7 +224,7 @@ class DFT_ground_state
             return ctx_;
         }
 
-        json find(double potential_tol, double energy_tol, int num_dft_iter, bool write_state);
+        json find(double potential_tol, double energy_tol, int num_dft_iter, bool write_state, bool mix=true);
 
         void print_info();
 
@@ -541,23 +541,21 @@ inline double DFT_ground_state::ewald_energy()
     return (ewald_g + ewald_r);
 }
 
-inline json DFT_ground_state::find(double potential_tol, double energy_tol, int num_dft_iter, bool write_state)
+inline json DFT_ground_state::find(double potential_tol, double energy_tol, int num_dft_iter, bool write_state, bool mix)
 {
     PROFILE("sirius::DFT_ground_state::scf_loop");
 
     double eold{0}, rms{0};
 
-    bool mix_density_and_potential{false};
-
-    if (ctx_.full_potential()) {
+    if (ctx_.full_potential() && mix) {
         potential_.mixer_init(ctx_.mixer_input());
-        if (mix_density_and_potential) {
+        if (mix) {
             Mixer_input i1 = ctx_.mixer_input();
             //i1.type_ = "linear";
             //i1.beta_ = 0.5;
             density_.mixer_init(i1);
         }
-    } else {
+    } else if(mix) {
         density_.mixer_init(ctx_.mixer_input());
     }
 
@@ -594,7 +592,8 @@ inline json DFT_ground_state::find(double potential_tol, double energy_tol, int 
 
         if (!ctx_.full_potential()) {
             /* mix density */
-            rms = density_.mix();
+            if (mix) rms = density_.mix();
+            if (std::isnan(rms)) raise(SIGINT);
             /* estimate new tolerance of iterative solver */
             double tol = std::max(1e-12, 0.1 * density_.dr2() / ctx_.unit_cell().num_valence_electrons());
             /* print dr2 of mixer and current iterative solver tolerance */
@@ -616,7 +615,7 @@ inline json DFT_ground_state::find(double potential_tol, double energy_tol, int 
         /* check number of elctrons */
         density_.check_num_electrons();
 
-        if (ctx_.full_potential() && mix_density_and_potential) {
+        if (ctx_.full_potential() && mix) {
             density_.mix();
         }
 
@@ -634,8 +633,9 @@ inline json DFT_ground_state::find(double potential_tol, double energy_tol, int 
         /* compute new total energy for a new density */
         double etot = total_energy();
 
-        if (ctx_.full_potential()) {
+        if (ctx_.full_potential() && mix) {
             rms = potential_.mix(1e-12);
+            if (std::isnan(rms)) raise(SIGINT);
             double tol = std::max(1e-12, 0.001 * rms);
             ctx_.set_iterative_solver_tolerance(std::min(ctx_.iterative_solver_tolerance(), tol));
         }
@@ -662,7 +662,7 @@ inline json DFT_ground_state::find(double potential_tol, double energy_tol, int 
             if (std::abs(eold - etot) < energy_tol && density_.dr2() < potential_tol) {
                 if (ctx_.comm().rank() == 0 && ctx_.control().verbosity_ >= 1) {
                     printf("\n");
-                    printf("converged after %i SCF iterations!\n", iter + 1);
+                    printf("converged to energy %.10G after %i SCF iterations!\n", etot, iter + 1);
                     printf("energy difference  : %18.12E < %18.12E\n", std::abs(eold - etot), energy_tol);
                     printf("density difference : %18.12E < %18.12E\n", density_.dr2(), potential_tol);
                 }
