@@ -250,7 +250,7 @@ PYBIND11_MODULE(py_sirius, m)
         .def("det", &matrix3d<double>::det);
 
     py::class_<Potential>(m, "Potential")
-        .def(py::init<Simulation_context&>(), py::keep_alive<1, 2>())
+        .def(py::init<Simulation_context&>(), py::keep_alive<1, 2>(), "ctx"_a)
         .def("generate", &Potential::generate)
         .def("symmetrize", &Potential::symmetrize)
         .def("fft_transform", &Potential::fft_transform)
@@ -264,7 +264,7 @@ PYBIND11_MODULE(py_sirius, m)
         .def("PAW_one_elec_energy", &Potential::PAW_one_elec_energy);
 
     py::class_<Density>(m, "Density")
-        .def(py::init<Simulation_context&>(), py::keep_alive<1, 2>())
+        .def(py::init<Simulation_context&>(), py::keep_alive<1, 2>(), "ctx"_a)
         .def("initial_density", &Density::initial_density)
         .def("allocate", &Density::allocate)
         .def("check_num_electrons", &Density::check_num_electrons)
@@ -332,18 +332,23 @@ PYBIND11_MODULE(py_sirius, m)
         .def(py::init<Simulation_context&, vector3d<int>, vector3d<int>, bool>())
         .def(py::init<Simulation_context&, std::vector<int>, std::vector<int>, bool>())
         .def("initialize", &K_point_set::initialize, py::arg("counts") = std::vector<int>{})
+        .def("ctx", &K_point_set::ctx, py::return_value_policy::reference_internal)
         .def("num_kpoints", &K_point_set::num_kpoints)
         .def("energy_fermi", &K_point_set::energy_fermi)
         .def("get_band_energies", &K_point_set::get_band_energies)
         .def("find_band_occupancies", &K_point_set::find_band_occupancies)
         .def("sync_band_energies", &K_point_set::sync_band_energies)
         .def("valence_eval_sum", &K_point_set::valence_eval_sum)
+        .def("__contains__", [](K_point_set& ks, int i) {
+            return (i >= 0 && i < ks.num_kpoints());
+        })
         .def("__getitem__", [](K_point_set& ks, int i) -> K_point& {
             if (ks[i] == nullptr) {
                 throw std::runtime_error("invalid memory access in K_point_set");
             }
             return *ks[i];
-        }, py::return_value_policy::reference_internal)
+        },
+             py::return_value_policy::reference_internal)
         .def("__len__", &K_point_set::num_kpoints)
         .def("add_kpoint", [](K_point_set& ks, std::vector<double> v, double weight) {
             ks.add_kpoint(v.data(), weight);
@@ -404,6 +409,7 @@ PYBIND11_MODULE(py_sirius, m)
                 for (int ispn = 0; ispn < num_sc; ++ispn)
                     hamiltonian.apply_h_s<complex_double>(&kp, ispn, N, n, wf, &wf_out, nullptr);
             } else {
+                std::cout << "applying Hamiltonian at Gamma-point" << "\n";
                 for (int ispn = 0; ispn < num_sc; ++ispn)
                     hamiltonian.apply_h_s<double>(&kp, ispn, N, n, wf, &wf_out, nullptr);
             }
@@ -420,7 +426,7 @@ PYBIND11_MODULE(py_sirius, m)
             }
             #endif // __GPU
             return wf_out;
-        }, "kpoint", "wf_in")
+        }, "kpoint"_a, "wf_in"_a)
         .def("apply_ref", [](Hamiltonian& hamiltonian, K_point& kp, Wave_functions& wf_out, Wave_functions& wf) {
             int num_wf = wf.num_wf();
             int num_sc = wf.num_sc();
@@ -457,11 +463,13 @@ PYBIND11_MODULE(py_sirius, m)
             hamiltonian.ctx().fft_coarse().prepare(kp.gkvec_partition());
             kp.beta_projectors().prepare();
             if (!hamiltonian.ctx().gamma_point()) {
-                for (int ispn = 0; ispn < num_sc; ++ispn)
+                for (int ispn = 0; ispn < num_sc; ++ispn) {
                     hamiltonian.apply_h_s<complex_double>(&kp, ispn, N, n, wf, &wf_out, nullptr);
+                }
             } else {
-                for (int ispn = 0; ispn < num_sc; ++ispn)
+                for (int ispn = 0; ispn < num_sc; ++ispn) {
                     hamiltonian.apply_h_s<double>(&kp, ispn, N, n, wf, &wf_out, nullptr);
+            }
             }
             kp.beta_projectors().dismiss();
             hamiltonian.local_op().dismiss();
@@ -476,7 +484,57 @@ PYBIND11_MODULE(py_sirius, m)
                     wf_out.copy_to_host(ispn, 0, n);
             }
             #endif // __GPU
-        }, "kpoint", "wf_out", "wf_in");
+        }, "kpoint"_a, "wf_out"_a, "wf_in"_a)
+        .def("apply_ref_single", [](Hamiltonian& hamiltonian, K_point& kp, int ispn, Wave_functions& wf_out, Wave_functions& wf) {
+            int num_wf = wf.num_wf();
+            int num_sc = wf.num_sc();
+            if (num_wf != wf_out.num_wf() || wf_out.num_sc() != num_sc) {
+                throw std::runtime_error("Hamiltonian::apply_ref (python bindings): num_sc or num_wf do not match");
+            }
+#ifdef __GPU
+            if (hamiltonian.ctx().processing_unit() == GPU) {
+                std::cerr << "WFCT: copy host -> device\n";
+                wf_out.allocate_on_device(ispn);
+                if (!wf.pw_coeffs(ispn).prime().on_device()) {
+                    wf.pw_coeffs(ispn).allocate_on_device();
+                    wf.pw_coeffs(ispn).copy_to_device(0, num_wf);
+                } else {
+                    wf.copy_to_device(ispn, 0, num_wf);
+                }
+            }
+#endif
+            /* apply H to all wave functions */
+            int N = 0;
+            int n = num_wf;
+            if (n != hamiltonian.ctx().num_bands()) {
+                throw std::runtime_error("num_wf != num_bands");
+            }
+            hamiltonian.local_op().prepare(hamiltonian.potential());
+            if (!hamiltonian.ctx().gamma_point()) {
+                hamiltonian.prepare<double_complex>();
+            } else {
+                hamiltonian.prepare<double>();
+            }
+            hamiltonian.local_op().prepare(kp.gkvec_partition());
+            hamiltonian.ctx().fft_coarse().prepare(kp.gkvec_partition());
+            kp.beta_projectors().prepare();
+            if (!hamiltonian.ctx().gamma_point()) {
+                hamiltonian.apply_h_s<complex_double>(&kp, ispn, N, n, wf, &wf_out, nullptr);
+            } else {
+                hamiltonian.apply_h_s<double>(&kp, ispn, N, n, wf, &wf_out, nullptr);
+            }
+            kp.beta_projectors().dismiss();
+            hamiltonian.local_op().dismiss();
+            hamiltonian.ctx().fft_coarse().dismiss();
+            if (!hamiltonian.ctx().full_potential()) {
+                hamiltonian.dismiss();
+            }
+#ifdef __GPU
+            if (hamiltonian.ctx().processing_unit() == GPU) {
+                wf_out.copy_to_host(ispn, 0, n);
+            }
+#endif // __GPU
+        }, "kpoint"_a, "ispn"_a, "wf_out"_a, "wf_in"_a);
 
     py::class_<Stress>(m, "Stress")
         .def(py::init<Simulation_context&, Density&, Potential&, Hamiltonian&, K_point_set&>())
@@ -508,7 +566,7 @@ PYBIND11_MODULE(py_sirius, m)
         .value("GPU", sddk::device_t::GPU);
 
     py::class_<Wave_functions>(m, "Wave_functions")
-        .def(py::init<Gvec_partition const&, int, int>())
+        .def(py::init<Gvec_partition const&, int, int>(), "gvecp"_a, "num_wf"_a, "num_sc"_a)
         .def("num_sc", &Wave_functions::num_sc)
         .def("num_wf", &Wave_functions::num_wf)
         .def("has_mt", &Wave_functions::has_mt)
