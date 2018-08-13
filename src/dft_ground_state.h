@@ -594,15 +594,15 @@ inline json DFT_ground_state::find(double potential_tol, double energy_tol, int 
             /* mix density */
             if (mix) {
                 rms = density_.mix();
-            if (std::isnan(rms)) raise(SIGINT);
-            /* estimate new tolerance of iterative solver */
-            double tol = std::max(1e-12, 0.1 * density_.dr2() / ctx_.unit_cell().num_valence_electrons());
-            /* print dr2 of mixer and current iterative solver tolerance */
-            if (ctx_.comm().rank() == 0 && ctx_.control().verbosity_ >= 1) {
-                printf("dr2: %18.12E, tol: %18.12E\n",  density_.dr2(), tol);
-            }
-            /* set new tolerance of iterative solver */
-            ctx_.set_iterative_solver_tolerance(std::min(ctx_.iterative_solver_tolerance(), tol));
+                if (std::isnan(rms)) raise(SIGINT);
+                /* estimate new tolerance of iterative solver */
+                double tol = std::max(1e-12, 0.1 * density_.dr2() / ctx_.unit_cell().num_valence_electrons());
+                /* print dr2 of mixer and current iterative solver tolerance */
+                if (ctx_.comm().rank() == 0 && ctx_.control().verbosity_ >= 1) {
+                    printf("dr2: %18.12E, tol: %18.12E\n",  density_.dr2(), tol);
+                }
+                /* set new tolerance of iterative solver */
+                ctx_.set_iterative_solver_tolerance(std::min(ctx_.iterative_solver_tolerance(), tol));
             }
             // TODO: this is horrible when PAW density is generated from the mixed
             //       density matrix here; better solution: generate in Density and
