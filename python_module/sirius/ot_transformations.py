@@ -35,23 +35,23 @@ def c(x, c0):
             cres[key] = c(xloc, c0loc)
         return cres
     else:
-    x = matview(x)
-    assert (np.linalg.norm(np.dot(x.H, c0), 'fro') < 1e-7)
-    XX = np.dot(x.H, x)
-    w, R = eigh(XX)
-    w = np.sqrt(w)
-    R = matview(R)
-    err = np.linalg.norm(R.H * R - np.eye(*R.shape), 'fro')
-    assert(err < 1e-11)
+        x = matview(x)
+        assert (np.linalg.norm(np.dot(x.H, c0), 'fro') < 1e-7)
+        XX = np.dot(x.H, x)
+        w, R = eigh(XX)
+        w = np.sqrt(w)
+        R = matview(R)
+        err = np.linalg.norm(R.H * R - np.eye(*R.shape), 'fro')
+        assert(err < 1e-11)
 
-    Wsin = np.diag(np.sin(w))
-    sinU = np.dot(np.dot(R, Wsin), R.H)
+        Wsin = np.diag(np.sin(w))
+        sinU = np.dot(np.dot(R, Wsin), R.H)
 
-    Wcos = np.diag(np.cos(w))
-    cosU = np.dot(np.dot(R, Wcos), R.H)
-    invU = np.dot(np.dot(R, np.diag(1. / w)), R.H)
+        Wcos = np.diag(np.cos(w))
+        cosU = np.dot(np.dot(R, Wcos), R.H)
+        invU = np.dot(np.dot(R, np.diag(1. / w)), R.H)
 
-    return np.dot(c0, cosU) + np.dot(np.dot(x, invU), sinU)
+        return np.dot(c0, cosU) + np.dot(np.dot(x, invU), sinU)
 
 
 class ConstrainedGradient:
@@ -211,7 +211,7 @@ class ConstrainedGradient:
 
         # Lagrange multiplier
         # TODO: this can be precomputed and stored
-        agrangeMult = solve(c0.H * c0, c0.H * dEdx)
-        correction = -1 * c0 * agrangeMult
+        lM = solve(c0.H * c0, c0.H * dEdx)
+        correction = -1 * c0 * lM
 
         return dEdx + correction, dEdx
