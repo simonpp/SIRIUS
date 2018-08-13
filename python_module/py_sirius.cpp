@@ -323,6 +323,7 @@ PYBIND11_MODULE(py_sirius, m)
         .def("gkvec_partition", &K_point::gkvec_partition, py::return_value_policy::reference_internal)
         .def("fv_states", &K_point::fv_states, py::return_value_policy::reference_internal)
         .def("ctx", &K_point::ctx, py::return_value_policy::reference_internal)
+        .def("weight", &K_point::weight)
         .def("spinor_wave_functions", &K_point::spinor_wave_functions, py::return_value_policy::reference_internal);
 
     py::class_<K_point_set>(m, "K_point_set")
@@ -375,7 +376,7 @@ PYBIND11_MODULE(py_sirius, m)
             int            num_wf          = wf.num_wf();
             int            num_sc          = wf.num_sc();
             Wave_functions wf_out(gkvec_partition, num_wf, num_sc);
-            #ifdef __GPU
+#ifdef __GPU
             if (hamiltonian.ctx().processing_unit() == GPU) {
                 for (int ispn = 0; ispn < num_sc; ++ispn) {
                     wf_out.allocate_on_device(ispn);
@@ -469,7 +470,7 @@ PYBIND11_MODULE(py_sirius, m)
             } else {
                 for (int ispn = 0; ispn < num_sc; ++ispn) {
                     hamiltonian.apply_h_s<double>(&kp, ispn, N, n, wf, &wf_out, nullptr);
-            }
+                }
             }
             kp.beta_projectors().dismiss();
             hamiltonian.local_op().dismiss();
