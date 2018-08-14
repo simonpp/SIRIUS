@@ -187,6 +187,7 @@ PYBIND11_MODULE(py_sirius, m)
         .def("count", &sddk::Gvec::count)
         .def("offset", &sddk::Gvec::offset)
         .def("gvec", &sddk::Gvec::gvec)
+        .def("gkvec", &sddk::Gvec::gkvec)
         .def("num_zcol", &sddk::Gvec::num_zcol)
         .def("gvec_alt", [](Gvec& obj, int idx) {
             vector3d<int>    vec(obj.gvec(idx));
@@ -213,6 +214,15 @@ PYBIND11_MODULE(py_sirius, m)
         })
         .def("__repr__", [](const vector3d<int>& vec) {
             return show_vec(vec);
+        })
+        .def("__len__", &vector3d<int>::length)
+        .def("__array__", [](vector3d<int>& v3d) {
+            py::array_t<int> x(3);
+            auto r = x.mutable_unchecked<1>();
+            r(0) = v3d[0];
+            r(1) = v3d[1];
+            r(2) = v3d[2];
+            return x;
         });
 
     py::class_<vector3d<double>>(m, "vector3d_double")
@@ -223,7 +233,15 @@ PYBIND11_MODULE(py_sirius, m)
         .def("__repr__", [](const vector3d<double>& vec) {
             return show_vec(vec);
         })
-        .def("length", &vector3d<double>::length)
+        .def("__array__", [](vector3d<double>& v3d) {
+            py::array_t<double> x(3);
+            auto r = x.mutable_unchecked<1>();
+            r(0) = v3d[0];
+            r(1) = v3d[1];
+            r(2) = v3d[2];
+            return x;
+        })
+        .def("__len__", &vector3d<double>::length)
         .def(py::self - py::self)
         .def(py::self * float())
         .def(py::self + py::self)
@@ -321,6 +339,7 @@ PYBIND11_MODULE(py_sirius, m)
             return occ;
         })
         .def("gkvec_partition", &K_point::gkvec_partition, py::return_value_policy::reference_internal)
+        .def("gkvec", &K_point::gkvec, py::return_value_policy::reference_internal)
         .def("fv_states", &K_point::fv_states, py::return_value_policy::reference_internal)
         .def("ctx", &K_point::ctx, py::return_value_policy::reference_internal)
         .def("weight", &K_point::weight)
