@@ -107,6 +107,34 @@ def ls_bracketing(x0, p, f, dfx0, tau=0.5, maxiter=40):
     return x0 + ds * p
 
 
+def diag_inv_sqrt(x):
+    """
+    returns sqrt(x)^{-1}
+    """
+    from .coefficient_array import PwCoeffs
+    assert(isinstance(x))
+
+    out = PwCoeffs(dtype=x.dtype)
+    for key, v in x:
+        dd = 1 / np.sqrt(np.diag(np.array(v)))
+        out[key] = np.diag(dd)
+    return out
+
+
+def diag_sqrt(x):
+    """
+    returns sqrt(x)
+    """
+    from .coefficient_array import PwCoeffs
+    assert(isinstance(x))
+
+    out = PwCoeffs(dtype=x.dtype)
+    for key, v in x:
+        dd = np.sqrt(np.diag(np.array(v)))
+        out[key] = np.diag(dd)
+    return out
+
+
 def minimize(x0,
              f,
              df,
