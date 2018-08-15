@@ -13,16 +13,24 @@ def inner(a, b):
         return np.sum(a * np.conj(b), copy=False)
 
 
-def beta_fletcher_reves(dfnext, df):
+def beta_fletcher_reves(dfnext, df, P=None):
     """
     """
-    return np.asscalar(inner(dfnext, dfnext) / inner(df, df))
+    if P is None:
+        return np.asscalar(inner(dfnext, dfnext) / inner(df, df))
+    else:
+        return np.asscalar(inner(dfnext, P*dfnext) / inner(df, P*df))
 
 
-def beta_polak_ribiere(dfnext, df):
+
+def beta_polak_ribiere(dfnext, df, P=None):
     """
     """
-    return np.asscalar(np.real(inner(dfnext, dfnext-df)) / inner(df, df))
+
+    if P is None:
+        return np.asscalar(np.real(inner(dfnext, dfnext-df)) / inner(df, df))
+    else:
+        return np.asscalar(np.real(inner(dfnext, P*dfnext-df)) / inner(df, P*df))
 
 
 def beta_sd(dfnext, df):
@@ -197,7 +205,7 @@ def minimize(x0,
             xnext = linesearch(x, p, f, dfx)
         except ValueError:
             # fall back to bracketing line-search
-            print('ls_qinterp failed')
+            print('line-search failed')
             assert (linesearch is not ls_bracketing)
             xnext = ls_bracketing(x, p, f, dfx)
 
