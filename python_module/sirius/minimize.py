@@ -7,7 +7,8 @@ def inner(a, b):
     """
     # TODO: find a better solution, not try except
     try:
-        return np.sum(np.array(a, copy=False)*np.array(np.conj(b), copy=False))
+        return np.sum(
+            np.array(a, copy=False) * np.array(np.conj(b), copy=False))
     except ValueError:
         # is of type CoefficientArray (cannot convert to array)
         return np.sum(a * np.conj(b), copy=False)
@@ -19,8 +20,7 @@ def beta_fletcher_reves(dfnext, df, P=None):
     if P is None:
         return np.asscalar(inner(dfnext, dfnext) / inner(df, df))
     else:
-        return np.asscalar(inner(dfnext, P*dfnext) / inner(df, P*df))
-
+        return np.asscalar(inner(dfnext, P @ dfnext) / inner(df, P @ df))
 
 
 def beta_polak_ribiere(dfnext, df, P=None):
@@ -28,9 +28,10 @@ def beta_polak_ribiere(dfnext, df, P=None):
     """
 
     if P is None:
-        return np.asscalar(np.real(inner(dfnext, dfnext-df)) / inner(df, df))
+        return np.asscalar(np.real(inner(dfnext, dfnext - df)) / inner(df, df))
     else:
-        return np.asscalar(np.real(inner(dfnext, P*dfnext-df)) / inner(df, P*df))
+        return np.asscalar(
+            np.real(inner(dfnext, P @ dfnext - df)) / inner(df, P @ df))
 
 
 def beta_sd(dfnext, df):
@@ -120,7 +121,7 @@ def diag_inv_sqrt(x):
     returns sqrt(x)^{-1}
     """
     from .coefficient_array import PwCoeffs
-    assert(isinstance(x))
+    assert (isinstance(x))
 
     out = PwCoeffs(dtype=x.dtype)
     for key, v in x:
@@ -134,7 +135,7 @@ def diag_sqrt(x):
     returns sqrt(x)
     """
     from .coefficient_array import PwCoeffs
-    assert(isinstance(x))
+    assert (isinstance(x))
 
     out = PwCoeffs(dtype=x.dtype)
     for key, v in x:
@@ -150,8 +151,9 @@ def minimize(x0,
              tol=1e-7,
              lstype='interp',
              mtype='FR',
+             M=None,
+             c0=None,
              restart=None,
-             callback=None,
              verbose=False,
              log=False):
     """
@@ -163,7 +165,8 @@ def minimize(x0,
     tol        -- (default 1e-7)
     lstype     -- (default 'interp')
     mtype      -- (default 'FR')
-    callback   -- (default None)
+    M          -- (default None) preconditioner
+    c0         -- (default None) TODO ugly, encapsulate
     verbose    -- (default False) debug output
     log        -- (default False) log values
 
@@ -173,6 +176,7 @@ def minimize(x0,
     success    -- converged to specified tolerance
     [history]  -- if log==True
     """
+    from .ot_transformations import constrain
 
     if mtype == 'FR':
         beta = beta_fletcher_reves
@@ -194,7 +198,10 @@ def minimize(x0,
 
     x = x0
     pdfx, dfx = df(x)
-    p = -1 * pdfx
+    if M is not None:
+        p = -constrain(M @ pdfx, c0)
+    else:
+        p = -pdfx
 
     if log:
         histf = [f(x)]
@@ -210,8 +217,8 @@ def minimize(x0,
             xnext = ls_bracketing(x, p, f, dfx)
 
         # side effect (update coefficients, band energies, density, potential)
+        # TODO: can be removed (it should be called in line-search methods above already)
         fnext = f(xnext)
-        # TODO update k-point set, e.g. call f(x),
         pdfx, dfx = df(xnext)
         if log:
             histf.append(fnext)
@@ -227,19 +234,26 @@ def minimize(x0,
 
         # conjugate search direction for next iteration
         if restart is not None and i % restart == 0:
-            p = -pdfx
-            assert(np.real(inner(p, dfx)) < 0)
-        else:
-            b = beta(-pdfx, p)
-            print('ϐ:', b)
-            p = -pdfx + b * p
-            if(inner(p, dfx) > 0):
-                print('minimize: RESTARTING')
+            if M is not None:
+                p = -constrain(M @ pdfx, c0)
+            else:
                 p = -pdfx
-            assert(np.real(inner(p, dfx)) < 0)
+            assert (np.real(inner(p, dfx)) < 0)
+        else:
+            b = beta(-pdfx, p, M)
+            print('ϐ:', b)
+            if M is not None:
+                p = -constrain(M @ pdfx, c0) + b * p
+            else:
+                p = -pdfx + b * p
+            if (inner(p, dfx) > 0):
+                print('minimize: RESTARTING')
+                if M is not None:
+                    p = -constrain(M @ pdfx, c0)
+                else:
+                    p = -pdfx
+                assert (np.real(inner(p, dfx)) < 0)
 
-        if callback is not None:
-            callback(x)
     else:
         if log:
             return (x, maxiter, False, histf)
