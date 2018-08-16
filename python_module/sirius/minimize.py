@@ -166,7 +166,6 @@ def minimize(x0,
     lstype     -- (default 'interp')
     mtype      -- (default 'FR')
     M          -- (default None) preconditioner
-    c0         -- (default None) TODO ugly, encapsulate
     verbose    -- (default False) debug output
     log        -- (default False) log values
 
@@ -176,7 +175,6 @@ def minimize(x0,
     success    -- converged to specified tolerance
     [history]  -- if log==True
     """
-    from .ot_transformations import constrain
 
     if mtype == 'FR':
         beta = beta_fletcher_reves
@@ -199,7 +197,7 @@ def minimize(x0,
     x = x0
     pdfx, dfx = df(x)
     if M is not None:
-        p = -constrain(M @ pdfx, c0)
+        p = -M @ pdfx
     else:
         p = -pdfx
 
@@ -235,7 +233,7 @@ def minimize(x0,
         # conjugate search direction for next iteration
         if restart is not None and i % restart == 0:
             if M is not None:
-                p = -constrain(M @ pdfx, c0)
+                p = -M @ pdfx
             else:
                 p = -pdfx
             assert (np.real(inner(p, dfx)) < 0)
@@ -243,13 +241,13 @@ def minimize(x0,
             b = beta(-pdfx, p, M)
             print('ϐ:', b)
             if M is not None:
-                p = -constrain(M @ pdfx, c0) + b * p
+                p = -M @ pdfx + b * p
             else:
                 p = -pdfx + b * p
             if (inner(p, dfx) > 0):
                 print('minimize: RESTARTING')
                 if M is not None:
-                    p = -constrain(M @ pdfx, c0)
+                    p = -M @ pdfx
                 else:
                     p = -pdfx
                 assert (np.real(inner(p, dfx)) < 0)
