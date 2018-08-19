@@ -455,7 +455,7 @@ PYBIND11_MODULE(py_sirius, m)
             }
             #ifdef __GPU
             if (hamiltonian.ctx().processing_unit() == GPU) {
-                std::cerr << "WFCT: copy host -> device\n";
+                // std::cerr << "WFCT: copy host -> device\n";
                 for (int ispn = 0; ispn < num_sc; ++ispn) {
                     wf_out.allocate_on_device(ispn);
                     if (!wf.pw_coeffs(ispn).prime().on_device()) {
@@ -499,7 +499,7 @@ PYBIND11_MODULE(py_sirius, m)
             }
             #ifdef __GPU
             if (hamiltonian.ctx().processing_unit() == GPU) {
-                std::cerr << "WFCT: copy device -> host\n";
+                // std::cerr << "WFCT: copy device -> host\n";
                 for (int ispn = 0; ispn < num_sc; ++ispn)
                     wf_out.copy_to_host(ispn, 0, n);
             }
@@ -513,7 +513,7 @@ PYBIND11_MODULE(py_sirius, m)
             }
 #ifdef __GPU
             if (hamiltonian.ctx().processing_unit() == GPU) {
-                std::cerr << "WFCT: copy host -> device\n";
+                // std::cerr << "WFCT: copy host -> device\n";
                 wf_out.allocate_on_device(ispn);
                 if (!wf.pw_coeffs(ispn).prime().on_device()) {
                     wf.pw_coeffs(ispn).allocate_on_device();
