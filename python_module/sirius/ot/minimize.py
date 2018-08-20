@@ -68,29 +68,21 @@ def ls_qinterp(x0, p, f, dfx0, s=0.2):
         # print('ls_qinterp failed!!!')
         # revert coefficients to x0
         f0r = f(x0)  # never remove this, need side effects
-        assert (f0 == f0r)
+        assert (np.isclose(f0, f0r))
         raise ValueError('ls_qinterp did not improve the solution')
     return x, fnext
 
 
 def gss(f, a, b, tol=1e-5):
-    '''
+    """
     Golden section search.
 
     Given a function f with a single local minimum in
     the interval [a,b], gss returns a subset interval
     [c,d] that contains the minimum with d-c <= tol.
 
-    example:
-    >>> f = lambda x: (x-2)**2
-    >>> a = 1
-    >>> b = 5
-    >>> tol = 1e-5
-    >>> (c,d) = gss(f, a, b, tol)
-    >>> print (c,d)
-    (1.9999959837979107, 2.0000050911830893)
-    '''
-    import math
+
+    """
 
     (a, b) = (min(a, b), max(a, b))
 
@@ -98,10 +90,10 @@ def gss(f, a, b, tol=1e-5):
     if h <= tol:
         return (a, b)
 
-    invphi = (math.sqrt(5) - 1) / 2  # 1/phi
-    invphi2 = (3 - math.sqrt(5)) / 2  # 1/phi^2
+    invphi = (np.sqrt(5) - 1) / 2  # 1/phi
+    invphi2 = (3 - np.sqrt(5)) / 2  # 1/phi^2
     # required steps to achieve tolerance
-    n = int(math.ceil(math.log(tol / h) / math.log(invphi)))
+    n = int(np.ceil(np.log(tol / h) / np.log(invphi)))
 
     c = a + invphi2 * h
     d = a + invphi * h
@@ -125,8 +117,10 @@ def gss(f, a, b, tol=1e-5):
             yd = f(d)
 
     if yc < yd:
+        # print('gss: a=%.2g, d=%.2g' % (a, d))
         return (a, d)
     else:
+        # print('gss: c=%.2g, b=%.2g' % (c, b))
         return (c, b)
 
 
@@ -134,8 +128,9 @@ def ls_golden(x0, p, f, **kwargs):
     """
     Golden-section search
     """
-    tmin = gss(lambda t: f(x0 + t * p), **kwargs, tol=1e-5)
-    x = x0 + tmin*p
+    t1, t2 = gss(lambda t: f(x0 + t * p), **kwargs, tol=1e-5)
+    tmin = (t1 + t2) / 2
+    x = x0 + tmin * p
     # important for side-effects
     fn = f(x)
     return x, fn
@@ -167,42 +162,14 @@ def ls_bracketing(x0, p, f, dfx0, tau=0.5, maxiter=40, **kwargs):
         else:
             ds *= tau
             fn = f(x0 + ds * p)
-            print('ls_bracketing: ds: %.4g' % ds)
+            # print('ls_bracketing: ds: %.4g' % ds)
     else:
         if not fn < f0 and np.abs(fn - f0) > 1e-10:
             raise ValueError(
                 'failed to find a step length after maxiter=%d iterations.' %
                 maxiter)
-    print('bracketing: step-length = : ', ds)
+    # print('bracketing: step-length = : ', ds)
     return x0 + ds * p, fn
-
-
-def diag_inv_sqrt(x):
-    """
-    returns sqrt(x)^{-1}
-    """
-    from .coefficient_array import PwCoeffs
-    assert (isinstance(x))
-
-    out = PwCoeffs(dtype=x.dtype)
-    for key, v in x:
-        dd = 1 / np.sqrt(np.diag(np.array(v)))
-        out[key] = np.diag(dd)
-    return out
-
-
-def diag_sqrt(x):
-    """
-    returns sqrt(x)
-    """
-    from .coefficient_array import PwCoeffs
-    assert (isinstance(x))
-
-    out = PwCoeffs(dtype=x.dtype)
-    for key, v in x:
-        dd = np.sqrt(np.diag(np.array(v)))
-        out[key] = np.diag(dd)
-    return out
 
 
 def minimize(x0,
@@ -266,28 +233,28 @@ def minimize(x0,
         histf = [f(x)]
 
     for i in range(maxiter):
-        print('---- minimize iteration ', i)
         try:
             xnext, fnext = linesearch(x, p, f, dfx)
         except ValueError:
             # fall back to bracketing line-search
-            print('line-search failed')
+            print('%d line-search resort to fallback' % i)
             assert (linesearch is not ls_bracketing)
-            xnext, fnext = ls_golden(x, p, f, a=0, b=100)
+            xnext, fnext = ls_golden(x, p, f, a=0, b=5)
 
         # side effect (update coefficients, band energies, density, potential)
         # TODO: can be removed (it should be called in line-search methods above already)
         pdfx, dfx = df(xnext)
         if log:
             histf.append(fnext)
+
+        res = np.real(inner(pdfx, pdfx))
+
         if verbose:
-            print('current energy: ', i, fnext)
+            print('%4d %16.9f (Ha)  residual: %.3e' % (i, fnext, res))
         x = xnext
 
-        res = inner(pdfx, pdfx)
-        print('residual: %.4g' % res)
         if res < tol:
-            print('success after', i + 1, ' iterations')
+            print('minimization: success after', i + 1, ' iterations')
             break
 
         # conjugate search direction for next iteration
@@ -299,13 +266,12 @@ def minimize(x0,
             assert (np.real(inner(p, dfx)) < 0)
         else:
             b = beta(-pdfx, p, M)
-            print('ϐ:', b)
             if M is not None:
                 p = -M @ pdfx + b * p
             else:
                 p = -pdfx + b * p
             if (inner(p, dfx) > 0):
-                print('minimize: RESTARTING')
+                # print('minimize: RESTARTING')
                 if M is not None:
                     p = -M @ pdfx
                 else:

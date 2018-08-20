@@ -12,6 +12,7 @@ def make_kinetic_precond(kpointset, c0, eps=0.1, asPwCoeffs=False):
 
     nk = kpointset.num_kpoints()
     nc = kpointset.ctx().num_spins()
+    unit_cell = kpointset.unit_cell()
     if nc == 1 and nk == 1 and not asPwCoeffs:
         # return as np.matrix
         kp = kpointset[0]
@@ -19,7 +20,8 @@ def make_kinetic_precond(kpointset, c0, eps=0.1, asPwCoeffs=False):
         assert (gkvec.num_gvec() == gkvec.count())
         N = gkvec.count()
         d = np.array([
-            1 / (np.sum(np.array(gkvec.gkvec(i))**2) + eps) for i in range(N)
+            1 / (np.sum((np.array(gkvec.gkvec(i)))**2) + eps)
+            for i in range(N)
         ])
         return DiagonalPreconditioner(
             D=dia_matrix((d, 0), shape=(N, N)), c0=c0)
@@ -31,7 +33,8 @@ def make_kinetic_precond(kpointset, c0, eps=0.1, asPwCoeffs=False):
             assert (gkvec.num_gvec() == gkvec.count())
             N = gkvec.count()
             d = np.array([
-                1 / (np.sum(np.array(gkvec.gkvec(i))**2) + eps)
+                1 / (np.sum(
+                    (np.array(gkvec.gkvec(i)))**2) + eps)
                 for i in range(N)
             ])
             for ispn in range(nc):
@@ -48,6 +51,7 @@ class DiagonalPreconditioner(Preconditioner):
     """
     Apply diagonal preconditioner and project resulting gradient to satisfy the constraint.
     """
+
     def __init__(self, D, c0):
         super().__init__()
         self.D = D
@@ -66,6 +70,20 @@ class DiagonalPreconditioner(Preconditioner):
             return constrain(out, self.c0)
         else:
             return constrain(self.D * other, self.c0)
+
+    def __mul__(self, s):
+        """
+
+        """
+        import numpy as np
+        if np.isscalar(s):
+            for key, Dl in self.D.items():
+                self.D[key] = s*Dl
+        else:
+            raise TypeError('not a scalar')
+
+    __lmul__ = __mul__
+    __rmul__ = __mul__
 
     def __neg__(self):
         """
