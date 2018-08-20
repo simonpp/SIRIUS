@@ -664,7 +664,6 @@ inline json DFT_ground_state::find(double potential_tol, double energy_tol, int 
             if (std::abs(eold - etot) < energy_tol && density_.dr2() < potential_tol) {
                 if (ctx_.comm().rank() == 0 && ctx_.control().verbosity_ >= 1) {
                     printf("\n");
-                    printf("converged to energy %.10G after %i SCF iterations!\n", etot, iter + 1);
                     printf("energy difference  : %18.12E < %18.12E\n", std::abs(eold - etot), energy_tol);
                     printf("density difference : %18.12E < %18.12E\n", density_.dr2(), potential_tol);
                 }
