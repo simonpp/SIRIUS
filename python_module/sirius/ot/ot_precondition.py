@@ -54,22 +54,21 @@ class DiagonalPreconditioner(Preconditioner):
 
     def __init__(self, D, c0):
         super().__init__()
-        self.D = D
         self.c0 = c0
+        self.D = D
 
     def __matmul__(self, other):
         """
         """
         from .coefficient_array import CoefficientArray
-        from .ot_transformations import constrain
+        from .ot_transformations import lagrangeMult
 
         out = type(other)(dtype=other.dtype)
         if isinstance(other, CoefficientArray):
             for key, Dl in self.D.items():
                 out[key] = Dl * other[key]
-            return constrain(out, self.c0)
-        else:
-            return constrain(self.D * other, self.c0)
+        ll = lagrangeMult(other, self.c0, self)
+        return out + ll
 
     def __mul__(self, s):
         """
@@ -99,3 +98,6 @@ class DiagonalPreconditioner(Preconditioner):
             out = DiagonalPreconditioner(self.D, self.c0)
             out.D = -self.D
             return out
+
+    def __getitem__(self, key):
+        return self.D[key]

@@ -225,7 +225,7 @@ def minimize(x0,
     x = x0
     pdfx, dfx = df(x)
     if M is not None:
-        p = -M @ pdfx
+        p = -M @ dfx
     else:
         p = -pdfx
 
@@ -260,20 +260,19 @@ def minimize(x0,
         # conjugate search direction for next iteration
         if restart is not None and i % restart == 0:
             if M is not None:
-                p = -M @ pdfx
+                p = -M @ dfx
             else:
                 p = -pdfx
             assert (np.real(inner(p, dfx)) < 0)
         else:
             b = beta(-pdfx, p, M)
             if M is not None:
-                p = -M @ pdfx + b * p
+                p = -M @ dfx + b * p
             else:
                 p = -pdfx + b * p
             if (inner(p, dfx) > 0):
-                # print('minimize: RESTARTING')
                 if M is not None:
-                    p = -M @ pdfx
+                    p = -M @ dfx
                 else:
                     p = -pdfx
                 assert (np.real(inner(p, dfx)) < 0)
