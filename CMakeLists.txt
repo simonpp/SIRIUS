@@ -34,6 +34,7 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -ggdb -O1 -DDEBUG")
 
 # include custom defined FindPackage modules
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
+include(GitSubmodule)
 list(APPEND CMAKE_PREFIX_PATH $ENV{CMAKE_PREFIX_PATH})
 
 # generate compile_commands.json with compile commands for each target
