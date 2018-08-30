@@ -46,10 +46,11 @@ pipeline {
         }
     }
 
-    post {
-        always {
-            archiveArtifacts: 'build*.out', fingerprint: true
-            archiveArtifacts: 'build*.err', fingerprint: true
-        }
-    }
+    // also fails...
+    // post {
+    //     always {
+    //         archiveArtifacts: 'build*.out', fingerprint: true
+    //         archiveArtifacts: 'build*.err', fingerprint: true
+    //     }
+    // }
 }
