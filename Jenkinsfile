@@ -46,11 +46,10 @@ pipeline {
         }
     }
 
-    // not working, pattern does not match anything
-    // post {
-    //     always {
-    //         archiveArtifacts artifacts: 'build*.out', fingerprint: true
-    //         archiveArtifacts artifacts: 'build*.err', fingerprint: true
-    //     }
-    // }
+    post {
+        always {
+            archiveArtifacts: 'build*.out', fingerprint: true
+            archiveArtifacts: 'build*.err', fingerprint: true
+        }
+    }
 }
