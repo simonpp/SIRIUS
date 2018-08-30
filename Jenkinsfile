@@ -27,13 +27,6 @@ pipeline {
                            cat build-daint-gpu.out
                            echo "---------- build-daint-gpu.err ----------"
                            cat build-daint-gpu.err
-                           (
-                               umask g+rx,o+rx
-                               # $SCRATCH is not set... set manually
-                               SCRATCH=/scratch/snx3000/jenkssl
-                               mkdir -p ${SCRATCH}/SIRIUS
-                               cp build-daint-gpu* ${SCRATCH}/SIRIUS
-                           )
                            '''
                     }
                 }
