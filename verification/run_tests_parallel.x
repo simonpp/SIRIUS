@@ -5,6 +5,14 @@ then
     export SIRIUS_BINARIES=../../apps/dft_loop
 fi
 
+if [[ $HOST == nid* ]]; then
+    SRUN_CMD=srun
+else
+    SRUN_CMD="mpi -np 4"
+fi
+
+
+
 exe=${SIRIUS_BINARIES}/sirius.scf
 # check if path is correct
 type -f ${exe} || exit 1
@@ -14,11 +22,7 @@ for f in ./*; do
         echo "running '${f}'"
         (
             cd ${f}
-            mpirun -np 4 ${exe} \
-                   --test_against=output_ref.json \
-                   --std_evp_solver_name=elpa1 \
-                   --gen_evp_solver_name=elpa1 \
-                   --mpi_grid="2 2"
+            ${SRUN_CMD} ${exe} --test_against=output_ref.json --std_evp_solver_name=scalapack --gen_evp_solver_name=scalapack --mpi_grid="2 2"
             err=$?
 
             if [ ${err} == 0 ]; then

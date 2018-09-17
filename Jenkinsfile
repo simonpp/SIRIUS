@@ -37,8 +37,12 @@ pipeline {
                 node('ssl_daintvm1') {
                     dir('SIRIUS') {
                         sh '''
-                    	     cd build &&
-                           echo "TODO: run tests...."
+                    	     cd build
+                           export SIRIUS_BINARIES=$(realpath apps/dft_loop)
+                           type -f ${SIRIUS_BINARIES}/sirius.scf
+                           sbatch --wait ../ci/run-mc-verification.sh
+                           cat *err
+                           cat *out
                            '''
                     }
                 }
@@ -46,11 +50,12 @@ pipeline {
         }
     }
 
-    // also fails...
-    // post {
-    //     always {
-    //         archiveArtifacts: 'build*.out', fingerprint: true
-    //         archiveArtifacts: 'build*.err', fingerprint: true
-    //     }
-    // }
+    post {
+        always {
+            node('ssl_daintvm1') {
+                archiveArtifacts artifacts: '**/*.out', fingerprint: true
+                archiveArtifacts artifacts: '**/*.err', fingerprint: true
+            }
+        }
+    }
 }
