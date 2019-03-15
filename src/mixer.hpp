@@ -292,6 +292,7 @@ class Broyden1 : public Mixer<T>
     double mix(double rss_min__)
     {
         PROFILE("sirius::Broyden1::mix");
+        std::cout << "Broyden1::mix\n";
 
         /* current position in history */
         int ipos = this->idx_hist(this->count_);
