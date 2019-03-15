@@ -96,6 +96,10 @@ double ground_state(Simulation_context& ctx,
 
     /* launch the calculation */
     auto result = dft.find(inp.potential_tol_, inp.energy_tol_, inp.num_dft_iter_, write_state);
+    dft.update();
+    auto result1 = dft.find(inp.potential_tol_, inp.energy_tol_, inp.num_dft_iter_, write_state);
+    dft.update();
+    auto result2 = dft.find(inp.potential_tol_, inp.energy_tol_, inp.num_dft_iter_, write_state);
 
     dft.print_magnetic_moment();
 
