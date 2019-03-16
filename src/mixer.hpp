@@ -298,8 +298,10 @@ class Broyden1 : public Mixer<T>
 
         /* compute residual square sum */
         double rss{0};
-        #pragma omp parallel for schedule(static) reduction(+:rss)
+        // #pragma omp parallel for schedule(static) reduction(+:rss)
         for (int i = 0; i < this->local_size_; i++) {
+            std::complex<double> ibuff = this->input_buffer_(i);
+            std::complex<double> ivec = this->vectors_(i, ipos);
             residuals_(i, ipos) = this->input_buffer_(i) - this->vectors_(i, ipos);
             std::complex<double> resi = residuals_(i, ipos);
             double lres = std::pow(std::abs(residuals_(i, ipos)), 2);
