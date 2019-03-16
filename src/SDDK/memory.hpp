@@ -34,6 +34,9 @@
 #include <algorithm>
 #include "GPU/acc.hpp"
 
+
+#define __DEBUG_MEMORY_POOL
+
 namespace sddk {
 
 template <typename T>
