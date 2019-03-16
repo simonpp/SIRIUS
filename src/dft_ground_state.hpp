@@ -27,6 +27,7 @@
 
 #include "K_point/k_point_set.hpp"
 #include "utils/json.hpp"
+#include "utils/utils.hpp"
 #include "Hubbard/hubbard.hpp"
 #include "Geometry/stress.hpp"
 #include "Geometry/force.hpp"
@@ -575,6 +576,7 @@ inline json DFT_ground_state::find(double potential_tol, double energy_tol, int 
         }
     } else {
         density_.mixer_init(ctx_.mixer_input());
+        density_.print_mixer_checksum();
     }
 
     int num_iter{-1};
@@ -594,22 +596,27 @@ inline json DFT_ground_state::find(double potential_tol, double energy_tol, int 
             printf("+------------------------------+\n");
         }
 
+        density_.print_mixer_checksum();
         /* find new wave-functions */
         Band(ctx_).solve(kset_, hamiltonian_, true);
+        density_.print_mixer_checksum();
         /* find band occupancies */
         kset_.find_band_occupancies();
         /* generate new density from the occupied wave-functions */
         density_.generate(kset_, true, false);
+        density_.print_mixer_checksum();
         /* symmetrize density and magnetization */
         if (ctx_.use_symmetry()) {
             density_.symmetrize();
             if (ctx_.electronic_structure_method() == electronic_structure_method_t::pseudopotential) {
                 density_.symmetrize_density_matrix();
             }
+            density_.print_mixer_checksum();
         }
 
         if (!ctx_.full_potential()) {
             /* mix density */
+            density_.print_mixer_checksum();
             rms = density_.mix();
             /* estimate new tolerance of iterative solver */
             double tol = std::max(1e-12, 0.1 * density_.dr2() / ctx_.unit_cell().num_valence_electrons());

@@ -30,6 +30,7 @@
 #include "periodic_function.hpp"
 #include "K_point/k_point_set.hpp"
 #include "mixer.hpp"
+#include "utils/utils.hpp"
 
 #if defined(__GPU)
 extern "C" void update_density_rg_1_gpu(int                   size__,
@@ -826,11 +827,16 @@ class Density : public Field4D
             Field4D::mixer_input();
         } else {
             int ld = static_cast<int>(hf_gvec_.size());
+            std::cout << "hf_gvec_.size: " << hf_gvec_.size() << "\n";
             if (hf_mixer_) {
                 /* input high-frequency components */
                 for (int j = 0; j < ctx_.num_mag_dims() + 1; j++) {
                     for (int i = 0; i < static_cast<int>(hf_gvec_.size()); i++) {
                         int igloc = hf_gvec_[i];
+                        auto x = component(j).f_pw_local(igloc);
+                        if (std::abs(x) > 1e5) {
+                            std::cout << "strange value in f_pw_local" << x << "\n";
+                        }
                         hf_mixer_->input_local(i + j * ld, component(j).f_pw_local(igloc));
                     }
                 }
@@ -842,6 +848,10 @@ class Density : public Field4D
                 if (j == 0) {
                     for (int i = 0; i < static_cast<int>(lf_gvec_.size()); i++) {
                         int igloc = lf_gvec_[i];
+                        auto x = component(j).f_pw_local(igloc);
+                        if (std::abs(x) > 1e5) {
+                            std::cout << "strange value in f_pw_local" << x << "\n";
+                        }
                         lf_mixer_->input_local(i + j * ld, component(j).f_pw_local(igloc), lf_gvec_weights_[i]);
                     }
                 } else {
@@ -907,13 +917,21 @@ class Density : public Field4D
                                                       static_cast<int>(lf_gvec_.size() * (1 + ctx_.num_mag_dims())),
                                                       mixer_cfg__,
                                                       ctx_.comm());
+            // compute checksum of what is given to input
+            utils::print_checksum("1 Density::mixer_init: pw_local checksum", component(0).checksum_pw());
             mixer_input();
+            utils::print_checksum("2 Density::mixer_init: pw_local checksum", component(0).checksum_pw());
             lf_mixer_->initialize();
+            utils::print_checksum("3 Density::mixer_init: pw_local checksum", component(0).checksum_pw());
 
             if (hf_mixer_) {
                 hf_mixer_->initialize();
             }
         }
+    }
+
+    void print_mixer_checksum() {
+        lf_mixer_->print_checksum();
     }
 
     double mix()

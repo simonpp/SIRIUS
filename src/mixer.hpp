@@ -23,6 +23,8 @@
  *          sirius::Broyden2 classes.
  */
 
+#include "utils/utils.hpp"
+
 #ifndef __MIXER_HPP__
 #define __MIXER_HPP__
 
@@ -144,6 +146,8 @@ class Mixer // TODO: review mixer implementation, it's too obscure
             spl_shared_local_size_ = spl_shared_size_.local_size();
         }
         local_size_ = spl_shared_local_size_ + local_vector_size_;
+        std::cout << "Mixer::Mixer: spl_shared_local_size_: " << spl_shared_local_size_ << "\n";
+        std::cout << "Mixer::Mixer: local_vector_size_: " << local_vector_size_ << "\n";
         /* allocate input buffer */
         input_buffer_ = mdarray<T, 1>(local_size_, memory_t::host, "Mixer::input_buffer_");
         /* allocate output bffer */
@@ -173,7 +177,11 @@ class Mixer // TODO: review mixer implementation, it's too obscure
     void input_local(int idx__, T value__, double w__ = 1.0)
     {
         assert(idx__ >= 0 && idx__ < local_vector_size_);
-
+        int lidx = idx__ + spl_shared_local_size_;
+        if (lidx==141 || lidx==20 || lidx==47) {
+            std::cout << "spl_shared_local_size_" << spl_shared_local_size_ << "\n";
+            std::cout << "Mixer::input_local: value__: " << value__  << ", idx: " << lidx << "\n";
+        }
         input_buffer_(spl_shared_local_size_ + idx__) = value__;
         weights_(spl_shared_local_size_ + idx__)      = w__;
     }
@@ -193,7 +201,20 @@ class Mixer // TODO: review mixer implementation, it's too obscure
     /** Copy content of the input buffer into first vector of the mixing history. */
     inline void initialize()
     {
+        using index_type = mdarray_index_descriptor::index_type;
+        std::cout << "Mixer::initialize, input_buffer_(47): " << input_buffer_(47) << std::endl;
+        std::cout << "Mixer::initialize, input_buffer_(20): " << input_buffer_(20) << std::endl;
+        std::cout << "Mixer::initialize, input_buffer_(141): " << input_buffer_(141) << std::endl;
+        index_type j = 0;
+        std::complex<double> sum = 0;
+        for(index_type i = 0; i < input_buffer_.size(0); ++i) {
+            sum += input_buffer_(i);
+        }
+        utils::print_checksum("Mixer::input_buffer_ (before memcpy)", sum);
+
         std::memcpy(&vectors_(0, 0), &input_buffer_(0), local_size_ * sizeof(T));
+        std::cout << "after memcpy\n";
+        print_checksum();
     }
 
     inline double beta() const
@@ -207,6 +228,17 @@ class Mixer // TODO: review mixer implementation, it's too obscure
     }
 
     virtual double mix(double rss_min__) = 0;
+
+    void print_checksum()
+    {
+        using index_type = mdarray_index_descriptor::index_type;
+        std::complex<double> sum = 0;
+        index_type j = 0;
+        for(index_type i = 0; i < vectors_.size(0); ++i) {
+            sum += vectors_(i,j);
+        }
+        utils::print_checksum("Mixer::vectors_", sum);
+    }
 };
 
 /// Primitive linear mixer.
@@ -269,7 +301,23 @@ class Broyden1 : public Mixer<T>
         #pragma omp parallel for schedule(static) reduction(+:rss)
         for (int i = 0; i < this->local_size_; i++) {
             residuals_(i, ipos) = this->input_buffer_(i) - this->vectors_(i, ipos);
-            rss += std::pow(std::abs(residuals_(i, ipos)), 2) * this->weights_(i);
+            std::complex<double> resi = residuals_(i, ipos);
+            double lres = std::pow(std::abs(residuals_(i, ipos)), 2);
+            double w = this->weights_(i);
+            double lresw = std::pow(std::abs(residuals_(i, ipos)), 2) * this->weights_(i);
+            if ( std::isnan(lresw)) {
+                std::cout << "Error: NaN in Broyden1::mix!\n "
+                          << "i, ipos: " << i << ", " << ipos
+                          << "\n"
+                          << "input_buffer_: " << ibuff
+                          << "\n"
+                          << "vectors(i, ipos): " << ivec
+                          << "\n"
+                          << "weight: " << w
+                          << "\n";
+                throw;
+            }
+            rss += lresw;
         }
         this->comm_.allreduce(&rss, 1);
         this->rss_ = rss;
