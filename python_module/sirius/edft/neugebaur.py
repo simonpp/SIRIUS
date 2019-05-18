@@ -9,6 +9,7 @@ from ..logger import Logger
 from .ortho import gram_schmidt, loewdin
 from mpi4py import MPI
 from copy import deepcopy
+from ..py_sirius import magnetization
 
 logger = Logger()
 
@@ -683,6 +684,9 @@ class CG:
 
             logger('step %5d' % ii, 'F: %.11f res: X,eta %+10.5e, %+10.5e' %
                    (FE, np.real(inner(g_X, G_X)), np.real(inner(g_eta, G_eta))))
+            mag, mag_norm = magnetization(self.M.energy.density, self.M.energy.kpointset.ctx())
+            for m, mn in zip(mag, mag_norm):
+                logger('magnetization: %.5f %.5f %.5f, %.5f' % (m[0], m[1], m[2], mn))
             eta = diag(ek)
             # keep previous search directions
             GP_X = G_X@U
