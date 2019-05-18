@@ -1,4 +1,5 @@
 from mpi4py import MPI
+import sys
 
 class Singleton(type):
     _instances = {}
@@ -31,12 +32,13 @@ class Logger:
         if self.comm.rank == 0 or self._all_print:
             if self.fout is not None:
                 with open(self.fout, 'a') as fh:
-                    print(arg1, *args, file=fh)
-                    print(arg1, *args, file=sys.stdout)
+                    print(arg1, *args, file=fh, flush=True)
+                    print(arg1, *args, file=sys.stdout, flush=True)
             else:
                 print(arg1, *args)
         elif self._all_print:
             print(arg1, *args)
+        sys.stdout.flush()
 
     def __call__(self, *args):
         self.log(*args)
