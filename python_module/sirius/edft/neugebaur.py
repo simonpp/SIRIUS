@@ -88,7 +88,7 @@ def inv_fermi_function(f, T, num_spins):
     else:
         return _inv_fermi_function(f, T, num_spins)
 
-@profile
+
 def find_chemical_potential(fun, mu0, tol=1e-10):
     """
     fun        -- ne - fn(mu)
@@ -113,7 +113,7 @@ def find_chemical_potential(fun, mu0, tol=1e-10):
         counter += 1
     return mu
 
-@profile
+
 def find_mu(kset, ek, T, tol=1e-10):
     """
     Wrapper for find_chemical_potential
@@ -132,7 +132,7 @@ def find_mu(kset, ek, T, tol=1e-10):
         mu0=0, tol=tol)
     return mu
 
-@profile
+
 def grad_eta(Hij, ek, fn, T, kw):
     """
     Computes ∂L/∂η
@@ -170,7 +170,7 @@ def grad_eta(Hij, ek, fn, T, kw):
     g_eta = (g_eta_1 + g_eta_2 + g_eta_3)
     return g_eta
 
-@profile
+
 def make_kinetic_precond(kpointset, eps=0.1):
     """
     Preconditioner
@@ -198,7 +198,7 @@ def make_kinetic_precond(kpointset, eps=0.1):
             P[k, ispn] = dia_matrix((d, 0), shape=(N, N))
     return DiagonalPreconditioner(P)
 
-@profile
+
 def btsearch(f, b, f0, maxiter=20, tau=0.5):
     """
     Backtracking search
@@ -388,7 +388,6 @@ class F():
         self.G_X = G_X
         self.G_eta = G_eta
 
-    @profile
     def __call__(self, t):
         """
         Evaluate along line
@@ -477,7 +476,7 @@ class CG:
         self.M = free_energy
         self._save = False
 
-    @profile
+
     def step(self, X, f, eta, G_X, G_eta, xi_trial, F0, slope, kwargs):
         """
         Keyword Arguments:
@@ -593,7 +592,6 @@ class CG:
 
         return X1, f1, ek1, F1, Hx1, Ul1
 
-    @profile
     def run(self, X, fn, maxiter=100, restart=20, tol=1e-10,
             prec=False, kappa=0.3, eps=0.001, use_g_eta=False,
             tau=0.5, cgtype='FR'):

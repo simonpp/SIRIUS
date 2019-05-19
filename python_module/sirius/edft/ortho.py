@@ -28,7 +28,7 @@ def gram_schmidt(X):
     else:
         return _gram_schmidt(X)
 
-@profile
+
 def loewdin(X):
     S = X.H @ X
     w, U = S.eigh()
