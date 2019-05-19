@@ -1,6 +1,12 @@
 import numpy as np
 from scipy.sparse import dia_matrix
 
+try:
+    import cupy as cp
+    has_cupy = True
+except ModuleNotFoundError:
+    has_cupy = False
+
 __all__ = ['CoefficientArray', 'inner', 'l2norm',
            'PwCoeffs', 'diag', 'einsum', 'ones_like']
 
@@ -216,7 +222,18 @@ class CoefficientArray:
         out = type(self)(dtype=dtype)
         if isinstance(other, CoefficientArray):
             for key in other._data.keys():
-                out[key] = self._data[key] @ other._data[key]
+                if has_cupy and isinstance(self._data[key], np.ndarray) and isinstance(other._data[key], np.ndarray):
+                    A = cp.array(self._data[key])
+                    B = cp.array(other._data[key])
+                    C = cp.asnumpy(A @ B)
+                    out[key] = C
+                    # check
+                    # Z = np.array(self._data[key] @ other._data[key])
+                    # out[key] = Z
+                    # print(Z.flags)
+                    # assert np.linalg.norm(Z-out[key], ord='fro') < 1e-9
+                else:
+                    out[key] = self._data[key] @ other._data[key]
         elif np.isscalar(other):
             for key in self._data.keys():
                 out[key] = self._data[key] @ other
