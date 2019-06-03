@@ -6,7 +6,7 @@ from .logger import Logger
 from .operators import S_operator
 import numpy as np
 from numpy import array, zeros
-__all__ = ["ot", "baarman", "bands", "edft"]
+__all__ = ["ot", "baarman", "bands", "edft", "marzari"]
 
 
 class OccupancyDescriptor(object):
