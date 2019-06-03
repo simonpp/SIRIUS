@@ -2,7 +2,7 @@ import numpy as np
 from scipy.sparse import dia_matrix
 
 __all__ = ['CoefficientArray', 'inner', 'l2norm',
-           'PwCoeffs', 'diag', 'einsum', 'ones_like']
+           'PwCoeffs', 'spdiag', 'diag', 'einsum', 'ones_like']
 
 
 def is_complex(x):
