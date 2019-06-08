@@ -205,10 +205,12 @@ class CG:
         logger('initial free energy: %.10f' % F)
 
         HX = Hx * kw
-        Hij = X.H @ HX
-        LL = Hij * fn
+        XhKHXF = X.H @ (K @ HX)
+        XhKX = X.H @ (K @ X)
+        LL = _solve(XhKX, XhKHXF)
+
         g_X = HX * fn - X @ LL
-        dX = -g_X  # delta_X
+        dX = -K * (HX - X @ LL) / kw
         G_X = dX
 
         for i in range(maxiter):
