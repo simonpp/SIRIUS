@@ -181,11 +181,12 @@ def chemical_potential(ek, T, kset):
 class CG:
     fd_slope_check = False
 
-    def __init__(self, free_energy):
+    def __init__(self, free_energy, fd_slope_check=False):
         """
         Keyword Arguments:
         free_energy    --
         """
+        self.fd_slope_check = fd_slope_check
         self.free_energy = free_energy
         self.T = free_energy.T
         self.dd = 1e-5
@@ -196,6 +197,17 @@ class CG:
             ncgrestart=20,
             ninner=2,
             tau=0.3):
+        """
+        Keyword Arguments:
+        self       --
+        X          --
+        fn         --
+        tol        --
+        maxiter    --
+        ncgrestart --
+        tau        --
+        """
+
         from ..edft.neugebaur import make_kinetic_precond
 
         kset = self.free_energy.energy.kpointset
