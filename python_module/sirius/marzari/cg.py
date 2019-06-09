@@ -423,8 +423,10 @@ class CG:
             # diagonalize fn and rotate X accordingly
             fn, U = fnij.eigh()
             for k in fn.keys():
-                fn[k] = np.where(np.isclose(fn[k], 0, atol=1e-10, rtol=1e-10), 0, fn[k])
-                fn[k] = np.where(np.isclose(fn[k], 1, atol=1e-10, rtol=1e-10), 1, fn[k])
+                fn[k] = np.where(np.logical_and(np.isclose(fn[k], 0, atol=1e-6, rtol=1e-6),
+                                                fn[k] < 0), 0, fn[k])
+                fn[k] = np.where(np.logical_and(np.isclose(fn[k], 1, atol=1e-6, rtol=1e-6),
+                                                fn[k] > 1), 1, fn[k])
                 assert np.all(np.logical_and(fn[k] >= 0, fn[k] <= 1))
             X = X @ U
             Um = Um @ U
