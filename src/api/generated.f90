@@ -592,25 +592,6 @@ end interface
 call sirius_add_xc_functional_aux(handler,name)
 end subroutine sirius_add_xc_functional
 
-!> @brief Add one of the XC functionals.
-!> @param [in] gs_handler Handler of the ground state
-!> @param [in] name LibXC label of the functional.
-subroutine sirius_insert_xc_functional(gs_handler,name)
-implicit none
-type(C_PTR), intent(in) :: gs_handler
-character(C_CHAR), dimension(*), intent(in) :: name
-interface
-subroutine sirius_insert_xc_functional_aux(gs_handler,name)&
-&bind(C, name="sirius_insert_xc_functional")
-use, intrinsic :: ISO_C_BINDING
-type(C_PTR), intent(in) :: gs_handler
-character(C_CHAR), dimension(*), intent(in) :: name
-end subroutine
-end interface
-
-call sirius_insert_xc_functional_aux(gs_handler,name)
-end subroutine sirius_insert_xc_functional
-
 !> @brief Set dimensions of the MPI grid.
 !> @param [in] handler Simulation context handler
 !> @param [in] ndims Number of dimensions.
@@ -898,6 +879,77 @@ if (present(save_state)) save_state_ptr = C_LOC(save_state)
 call sirius_find_ground_state_aux(gs_handler,density_tol_ptr,energy_tol_ptr,niter_ptr,&
 &save_state_ptr)
 end subroutine sirius_find_ground_state
+
+!> @brief Find the ground state using the robust
+!> @param [in] gs_handler Handler of the ground state.
+!> @param [in] ks_handler Handler of the k-point set.
+!> @param [in] scf_density_tol Tolerance on RMS in density.
+!> @param [in] scf_energy_tol Tolerance in total energy difference.
+!> @param [in] scf_ninit__ Number of SCF iterations.
+!> @param [in] temp__ Temperature.
+!> @param [in] tol__ Tolerance.
+!> @param [in] cg_restart__ CG restart.
+!> @param [in] kappa__ Scalar preconditioner for pseudo Hamiltonian
+subroutine sirius_find_ground_state_robust(gs_handler,ks_handler,scf_density_tol,&
+&scf_energy_tol,scf_ninit__,temp__,tol__,cg_restart__,kappa__)
+implicit none
+type(C_PTR), intent(in) :: gs_handler
+type(C_PTR), intent(in) :: ks_handler
+real(C_DOUBLE), optional, target, intent(in) :: scf_density_tol
+real(C_DOUBLE), optional, target, intent(in) :: scf_energy_tol
+integer(C_INT), optional, target, intent(in) :: scf_ninit__
+real(C_DOUBLE), optional, target, intent(in) :: temp__
+real(C_DOUBLE), optional, target, intent(in) :: tol__
+integer(C_INT), optional, target, intent(in) :: cg_restart__
+real(C_DOUBLE), optional, target, intent(in) :: kappa__
+type(C_PTR) :: scf_density_tol_ptr
+type(C_PTR) :: scf_energy_tol_ptr
+type(C_PTR) :: scf_ninit___ptr
+type(C_PTR) :: temp___ptr
+type(C_PTR) :: tol___ptr
+type(C_PTR) :: cg_restart___ptr
+type(C_PTR) :: kappa___ptr
+interface
+subroutine sirius_find_ground_state_robust_aux(gs_handler,ks_handler,scf_density_tol,&
+&scf_energy_tol,scf_ninit__,temp__,tol__,cg_restart__,kappa__)&
+&bind(C, name="sirius_find_ground_state_robust")
+use, intrinsic :: ISO_C_BINDING
+type(C_PTR), intent(in) :: gs_handler
+type(C_PTR), intent(in) :: ks_handler
+type(C_PTR), value :: scf_density_tol
+type(C_PTR), value :: scf_energy_tol
+type(C_PTR), value :: scf_ninit__
+type(C_PTR), value :: temp__
+type(C_PTR), value :: tol__
+type(C_PTR), value :: cg_restart__
+type(C_PTR), value :: kappa__
+end subroutine
+end interface
+
+scf_density_tol_ptr = C_NULL_PTR
+if (present(scf_density_tol)) scf_density_tol_ptr = C_LOC(scf_density_tol)
+
+scf_energy_tol_ptr = C_NULL_PTR
+if (present(scf_energy_tol)) scf_energy_tol_ptr = C_LOC(scf_energy_tol)
+
+scf_ninit___ptr = C_NULL_PTR
+if (present(scf_ninit__)) scf_ninit___ptr = C_LOC(scf_ninit__)
+
+temp___ptr = C_NULL_PTR
+if (present(temp__)) temp___ptr = C_LOC(temp__)
+
+tol___ptr = C_NULL_PTR
+if (present(tol__)) tol___ptr = C_LOC(tol__)
+
+cg_restart___ptr = C_NULL_PTR
+if (present(cg_restart__)) cg_restart___ptr = C_LOC(cg_restart__)
+
+kappa___ptr = C_NULL_PTR
+if (present(kappa__)) kappa___ptr = C_LOC(kappa__)
+
+call sirius_find_ground_state_robust_aux(gs_handler,ks_handler,scf_density_tol_ptr,&
+&scf_energy_tol_ptr,scf_ninit___ptr,temp___ptr,tol___ptr,cg_restart___ptr,kappa___ptr)
+end subroutine sirius_find_ground_state_robust
 
 !> @brief Update a ground state object after change of atomic coordinates or lattice vectors.
 !> @param [in] gs_handler Ground-state handler.

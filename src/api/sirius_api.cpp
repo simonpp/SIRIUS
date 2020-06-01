@@ -522,18 +522,6 @@ void sirius_add_xc_functional(void* const* handler__,
     sim_ctx.add_xc_functional(std::string(name__));
 }
 
-/* @fortran begin function void sirius_insert_xc_functional         Add one of the XC functionals.
-   @fortran argument in required void* gs_handler                Handler of the ground state
-   @fortran argument in required string name                     LibXC label of the functional.
-   @fortran end */
-void
-sirius_insert_xc_functional(void* const* gs_handler__,
-                            char const* name__)
-{
-    auto& gs = get_gs(gs_handler__);
-    auto& potential = gs.potential();
-    potential.insert_xc_functionals({name__});
-}
 
 /* @fortran begin function void sirius_set_mpi_grid_dims      Set dimensions of the MPI grid.
    @fortran argument in required void*  handler               Simulation context handler
