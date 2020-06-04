@@ -139,8 +139,8 @@ public:
   // stop with string identifier (storing string object comes with some additional overhead)
   inline auto stop(std::string identifier) -> void {
     atomic_signal_fence(std::memory_order_seq_cst);  // only prevents compiler reordering
-    identifierStrings_.emplace_back(std::move(identifier));
     timeStamps_.emplace_back(identifierStrings_.back().c_str(), internal::TimeStampType::Stop);
+    identifierStrings_.emplace_back(std::move(identifier));
     atomic_signal_fence(std::memory_order_seq_cst);  // only prevents compiler reordering
   }
 
