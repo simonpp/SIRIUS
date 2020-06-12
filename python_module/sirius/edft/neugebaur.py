@@ -422,6 +422,7 @@ class CG:
         G_X = delta_X
         G_eta = -g_eta
         delta_eta = G_eta
+        tmin = 0.2
 
         cg_restart_inprogress = False
         for ii in range(1, 1+maxiter):
@@ -438,8 +439,10 @@ class CG:
                 # TODO: tmin is not set, but used later
             else:
                 try:
+                    tmin_next = min(max(0.8*tmin, 1e-5), 4)
+                    logger('trial point: ', tmin_next)
                     X, fn, ek, FE, Hx, U, tmin = self.step(X, fn, eta, G_X, G_eta,
-                                                           xi_trial=0.2, F0=FE, slope=slope,
+                                                           xi_trial=tmin_next, F0=FE, slope=slope,
                                                            kwargs={'gx': g_X, 'g_eta': g_eta})
                     # reset kappa
                     kappa = kappa0
@@ -449,14 +452,14 @@ class CG:
                     try:
                         Fline = F(X, eta, M, G_X, G_eta)
                         logger('btsearch')
-                        X, fn, ek, FE, Hx, U, tmin = self.backtracking_search(X, fn, eta, Fline, FE, tau=tau)
+                        X, fn, ek, FE, Hx, U, _ = self.backtracking_search(X, fn, eta, Fline, FE, tau=tau)
                     except StepError:
                         # not even golden section search works
                         # restart CG and reduce kappa
                         cg_restart_inprogress = True
                         kappa = kappa/3
                         logger('kappa: ', kappa)
-                        tmin = 0
+
             callback(g_X=g_X, G_X=G_X, g_eta=g_eta, G_eta=G_eta, fn=fn, X=X, eta=eta, FE=FE, it=ii)
             logger('step %5d' % ii, 'F: %.11f res: X,eta %+10.5e, %+10.5e' %
                    (FE, np.real(inner(g_X, G_X)), np.real(inner(g_eta, G_eta))))
