@@ -762,11 +762,11 @@ void Potential::xc_rg_magnetic(Density const& density__)
     /* compute "up" and "dn" components and also check for negative values of density */
     double rhomin{0};
     for (int ir = 0; ir < num_points; ir++) {
-        double mag{0};
-        for (int j = 0; j < ctx_.num_mag_dims(); j++) {
-            mag += std::pow(density__.magnetization(j).f_rg(ir), 2);
-        }
-        mag = std::sqrt(mag);
+        double mag = density__.magnetization(0).f_rg(ir);
+        // for (int j = 0; j < ctx_.num_mag_dims(); j++) {
+        //     mag += std::pow(density__.magnetization(j).f_rg(ir), 2);
+        // }
+        // mag = std::sqrt(mag);
 
         double rho = density__.rho().f_rg(ir);
         if (add_pseudo_core__) {
@@ -775,14 +775,14 @@ void Potential::xc_rg_magnetic(Density const& density__)
         rho *= scale_rho_xc_;
         mag *= scale_rho_xc_;
 
-        /* remove numerical noise at high values of magnetization */
-        mag = std::min(mag, rho);
+        // /* remove numerical noise at high values of magnetization */
+        // mag = std::min(mag, rho);
 
-        rhomin = std::min(rhomin, rho);
-        if (rho < 0.0) {
-            rho = 0.0;
-            mag = 0.0;
-        }
+        // rhomin = std::min(rhomin, rho);
+        // if (rho < 0.0) {
+        //     rho = 0.0;
+        //     mag = 0.0;
+        // }
 
         rho_up.f_rg(ir) = 0.5 * (rho + mag);
         rho_dn.f_rg(ir) = 0.5 * (rho - mag);
@@ -1028,10 +1028,10 @@ void Potential::xc_rg_magnetic(Density const& density__)
         xc_potential_->f_rg(irloc) = 0.5 * (vxc_up_tmp(irloc) + vxc_dn_tmp(irloc));
         double m = rho_up.f_rg(irloc) - rho_dn.f_rg(irloc);
 
-        if (m > 1e-8) {
+        if (std::abs(m) > 1e-8) {
             double b = 0.5 * (vxc_up_tmp(irloc) - vxc_dn_tmp(irloc));
             for (int j = 0; j < ctx_.num_mag_dims(); j++) {
-               effective_magnetic_field(j).f_rg(irloc) = b * density__.magnetization(j).f_rg(irloc) / m;
+                effective_magnetic_field(j).f_rg(irloc) = b * density__.magnetization(j).f_rg(irloc) / std::abs(m);
             }
         } else {
             for (int j = 0; j < ctx_.num_mag_dims(); j++) {
