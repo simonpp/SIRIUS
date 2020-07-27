@@ -69,7 +69,7 @@ reproducible work environment for the examples below.
 Suppose we have a minimal Linux installation described below
 <details><summary>Dockerfile</summary>
 <p>
- 
+
 ```dockerfile
 FROM ubuntu:bionic
 
@@ -225,9 +225,11 @@ Please refer to [Spack documentation](https://spack.readthedocs.io/en/latest/) f
 
 
 ### Adding GPU support
-To enable CUDA you need to pass the following options to cmake: `-DUSE_CUDA=On -DGPU_MODEL='P100'`. The currently
-supported GPU models are `P100`, `V100` and `G10x0` but other architectures can be added easily. If CUDA is installed in a
-non-standard directory, you have to pass additional parameter to cmake `-DCUDA_TOOLKIT_ROOT_DIR=/path/to/cuda`.
+To enable CUDA you need to pass the following options to cmake: `-DUSE_CUDA=On
+-DCUDA_ARCH=60`. The `CUDA_ARCH` is the compute capability version without dot.
+For example Pascal has compute capability `6.0` so the cuda arch is `60`. If
+CUDA is installed in a non-standard directory, you have to pass additional
+parameter to cmake `-DCUDA_TOOLKIT_ROOT_DIR=/path/to/cuda`.
 
 To enable MAGMA (GPU implementation of Lapack) you need to pass the following option to cmake: `-DUSE_MAGMA=On`. If MAGMA
 was installed in a non-standard directory you need to export additional environment variable `MAGMAROOT=/path/to/magma`.
@@ -251,7 +253,7 @@ tests you need to specify `-DBUILD_TESTS=On`.
 Archlinux users can find SIRIUS in the [AUR](https://aur.archlinux.org/packages/sirius-git/).
 
 ### Installation on Piz Daint
-Please refer to [SIRIUS wiki page](https://github.com/electronic-structure/SIRIUS/wiki/Build-on-Piz-Daint) and 
+Please refer to [SIRIUS wiki page](https://github.com/electronic-structure/SIRIUS/wiki/Build-on-Piz-Daint) and
 [CSCS User portal](https://user.cscs.ch/computing/applications/sirius/) for detailed instructions.
 
 ## Accelerating DFT codes
@@ -259,7 +261,7 @@ Please refer to [SIRIUS wiki page](https://github.com/electronic-structure/SIRIU
 ### Quantum ESPRESSO
 [Quantum ESPRESSO](https://www.quantum-espresso.org/) is a popular open source suite of computer codes for
 electronic-structure calculations and materials modeling at the nanoscale. It is based on DFT, plane waves, and
-pseudopotentials. We maintain the GPU-accelerated version of 
+pseudopotentials. We maintain the GPU-accelerated version of
 [Quantum ESPRESSO with SIRIUS bindings](https://github.com/electronic-structure/q-e-sirius).
 This version is frequently synchronised with the
 `develop` branch of the official [QE repository](https://gitlab.com/QEF/q-e). A typical example of using SIRIUS
@@ -327,7 +329,7 @@ sed -i -e "s/LAPACK_LIBS_SWITCH = internal/LAPACK_LIBS_SWITCH = external/" make.
 
 make -j pw
 ```
-This should hopefully produce the `pw.x` binary in `PW/src` folder. If this doesn't work, try to configure QE as you 
+This should hopefully produce the `pw.x` binary in `PW/src` folder. If this doesn't work, try to configure QE as you
 usually do and then modify `make.inc` file by hand to add `-I/path/to/sirius/include` directory to the Fortran compiler
 options and `-L$/path/to/sirius/lib -Wl,-rpath,/path/to/sirius/lib -lsirius` to the linker flags.
 
@@ -411,7 +413,7 @@ RUN cd SIRIUS-$SIRIUS_VERSION && CC=mpicc CXX=mpicxx FC=mpif90 FCCPP=cpp python3
 
 RUN mkdir SIRIUS-$SIRIUS_VERSION/build && cd SIRIUS-$SIRIUS_VERSION/build && LIBSPGROOT=/usr/local \
     cmake .. -DSpFFT_DIR=/usr/local/lib/cmake/SpFFT -DUSE_SCALAPACK=1 -DUSE_MKL=1 -DBUILD_TESTS=1 \
-    -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DUSE_CUDA=On -DGPU_MODEL='P100'
+    -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DUSE_CUDA=On -DCUDA_ARCH=60
 
 RUN cd SIRIUS-$SIRIUS_VERSION/build && make -j12 install
 
@@ -468,7 +470,7 @@ large (for example, containing >500 atoms).
 SIRIUS library is using OpenMP for node-level parallelization. To run QE/SIRIUS efficiently, follow these simple rules:
  * always prefer k-point pool parallelization over band parallelization
  * use as few MPI ranks as possible for band parallelization
- * by default, use one rank per node and many OMP threads; if the calculated system is really small, try to saturate 
+ * by default, use one rank per node and many OMP threads; if the calculated system is really small, try to saturate
    the GPU card using more MPI ranks (e.g.: on a 12-core node, use 2-3-4 ranks with 6-4-3 OMP threads)
 
 #### Benchmarks
@@ -514,4 +516,3 @@ The development of SIRIUS library would not be possible without support of the f
 |![pasc](doc/images/logo_marvel.png) | NCCR MARVEL <br> Centre on Computational Design and Discovery of Novel Materials | https://nccr-marvel.ch/ |
 |![pasc](doc/images/logo_max.png)    | MAX (MAterials design at the eXascale) <br> European Centre of Excellence | http://www.max-centre.eu/   |
 |![pasc](doc/images/logo_prace.png)  | Partnership for Advanced Computing in Europe | https://prace-ri.eu/  |
-
